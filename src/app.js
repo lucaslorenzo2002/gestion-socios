@@ -87,5 +87,9 @@ const SociosRouter  = require('./routes/socios');
 const sociosRouter = new SociosRouter();
 app.use('/api', sociosRouter.start());
 
+const PagosRouter  = require('./routes/pagos');
+const pagosRouter = new PagosRouter();
+app.use('/api', pagosRouter.start());
+
 
 module.exports = httpServer;

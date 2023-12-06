@@ -88,11 +88,12 @@ class CuotasDAO{
 		}
 	}
 
-	async getMisCuotas(socioId){
+	async getMisCuotasPendientes(socioId){
 		try{
 			const misCuotasId = await Socio_Cuota.findAll({
 				where:{
 					socio_id: socioId,
+					estado: 'PENDIENTE'
 				}
 			});
 
@@ -105,6 +106,33 @@ class CuotasDAO{
 					monto: cuota.monto,
 					fecha_emision:formatDateString(cuota.fecha_emision),
 					fecha_vencimiento: formatDateString(cuota.fecha_vencimiento),
+				});
+				
+			}
+
+			return misCuotasData;
+		}catch(err){
+			logger.info(err);
+		}
+	} 
+
+	async getMisCuotasPagas(socioId){
+		try{
+			const misCuotasId = await Socio_Cuota.findAll({
+				where:{
+					socio_id: socioId,
+					estado: 'PAGO'
+				}
+			});
+
+			const misCuotasData = [];
+			for (let i = 0; i < misCuotasId.length; i++) {
+				const cuota = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id);
+				misCuotasData.push({
+					id: misCuotasId[i].dataValues.id, 
+					estado: misCuotasId[i].dataValues.estado,
+					monto: cuota.monto,
+					fecha_emision:formatDateString(cuota.fecha_emision),
 					banco: misCuotasId[i].dataValues.banco,
 					forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
 					fecha_de_pago: formatDateString(misCuotasId[i].dataValues.fecha_pago),
@@ -113,6 +141,36 @@ class CuotasDAO{
 			}
 
 			return misCuotasData;
+		}catch(err){
+			logger.info(err);
+		}
+	} 
+
+	async getAllCuotasSocio(socioId){
+		try{
+			const cuotasSocio = await Socio_Cuota.findAll({
+				where:{
+					socio_id: socioId
+				}
+			});
+
+			const cuotasSocioData = [];
+			for (let i = 0; i < cuotasSocio.length; i++) {
+				const cuota = await Cuota.findByPk(cuotasSocio[i].dataValues.cuota_id);
+				cuotasSocioData.push({
+					id: cuotasSocio[i].dataValues.id, 
+					estado: cuotasSocio[i].dataValues.estado,
+					monto: cuota.monto,
+					fecha_emision:formatDateString(cuota.fecha_emision),
+					fecha_vencimiento: formatDateString(cuota.fecha_vencimiento),
+					banco: cuotasSocio[i].dataValues.banco,
+					forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
+					fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
+				});
+				
+			}
+
+			return cuotasSocioData;
 		}catch(err){
 			logger.info(err);
 		}

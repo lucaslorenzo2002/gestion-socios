@@ -12,25 +12,34 @@ class CuotasController{
 			await this.cuotasApi.createCuota(monto, to, req.user.club_asociado);
 			res.status(201).json({success: true, message: 'cuota generada con exito'});
 		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err});
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 
-	getMisCuotas = asyncHandler(async(req, res) => {
+	getMisCuotasPendientes = asyncHandler(async(req, res) => {
 		try {
-			const cuotas = await this.cuotasApi.getMisCuotas(req.user.id);
+			const cuotas = await this.cuotasApi.getMisCuotasPendientes(req.user.id);
 			res.status(201).json({success: true, data: cuotas});
 		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err});
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
+	getMisCuotasPagas = asyncHandler(async(req, res) => {
+		try {
+			const cuotas = await this.cuotasApi.getMisCuotasPagas(req.user.id);
+			res.status(201).json({success: true, data: cuotas});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 
 	getCuotasSocio = asyncHandler(async(req, res) => {
 		try {
-			const cuotas = await this.cuotasApi.getMisCuotas(req.params.id);
+			const cuotas = await this.cuotasApi.getAllCuotasSocio(req.params.id);
 			res.status(201).json({success: true, data: cuotas});
 		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err});
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 
@@ -39,7 +48,7 @@ class CuotasController{
 			const cuotas = await this.cuotasApi.getAllCuotas(req.user.club_asociado);
 			res.status(201).json({success: true, data: cuotas});
 		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err});
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 
@@ -51,7 +60,7 @@ class CuotasController{
 			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, email, socioDni, cardNumber, cardExpirationMonth, cardExpirationYear, cardholderName, cvv);
 			res.status(201).json({success: true, message: 'cuota pagada con exito'});
 		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err});
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 

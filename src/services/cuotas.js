@@ -2,7 +2,6 @@ const CuotasDAO = require('../database/cuotas');
 const NotificacionesApi = require('../services/notificaciones');
 const SociosApi = require('../services/socios');
 const sendEmail = require('../utils/sendEmail');
-const createOrder = require('../utils/createOrder');
 
 class CuotasApi{
 	constructor(){
@@ -46,20 +45,28 @@ class CuotasApi{
 		return cuota;
 	}
 
-	async getMisCuotas(socioId){
-		return await this.cuotasDAO.getMisCuotas(socioId);
-	}
-
 	async getAllCuotas(clubAsociado){
 		return await this.cuotasDAO.getAllCuotas(clubAsociado);
 	}
 
-	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, socioEmail, socioDni, cardNumber, cardExpirationMonth, cardExpirationYear, cardholderName, cvv){
+	async getMisCuotasPendientes(socioId){
+		return await this.cuotasDAO.getMisCuotasPendientes(socioId);
+	}
+
+	async getMisCuotasPagas(socioId){
+		return await this.cuotasDAO.getMisCuotasPagas(socioId);
+	}
+
+	async getAllCuotasSocio(socioId){
+		return await this.cuotasDAO.getAllCuotasSocio(socioId);
+	}
+
+	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId){
 		const socioCuota = await this.cuotasDAO.getSocioCuota(socioCuotaId);
+		console.log(socioCuota);
 		const cuotaId = socioCuota.dataValues.cuota_id;
 		const cuota = await this.getCuota(cuotaId);
 		const monto = cuota.dataValues.monto;
-		await createOrder(monto);
 		return await this.cuotasDAO.pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto);
 	}
 

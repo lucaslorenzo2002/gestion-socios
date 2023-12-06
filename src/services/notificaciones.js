@@ -1,6 +1,6 @@
 const NotificacionesDAO = require('../database/notificaciones');
 
-class CuotasApi{
+class NotificacionesApi{
 	constructor(){
 		this.notificacionesDAO = new NotificacionesDAO();
 	}
@@ -11,4 +11,4 @@ class CuotasApi{
     
 }
 
-module.exports = CuotasApi;
+module.exports = NotificacionesApi;
