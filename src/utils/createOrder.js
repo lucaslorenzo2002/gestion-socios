@@ -3,7 +3,9 @@ require('dotenv').config();
 
 const createOrder = async(socioId, socioCuotaId, amount, socioDeuda) => {
 	mercadopago.configure({
-		access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN
+		access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN,
+		client_id: process.env.MERCADO_PAGO_CLIENT_ID,
+		client_secret: process.env.MERCADO_PAGO_CLIENT_SECRET
 	});
 
 	return await mercadopago.preferences.create({
@@ -19,7 +21,7 @@ const createOrder = async(socioId, socioCuotaId, amount, socioDeuda) => {
 			}
 		],
 		back_urls:{
-			success: 'http://localhost:4000/api/success',
+			success: 'http://localhost:5173/',
 			failure: 'http://localhost:4000/api/failure',
 			pending: 'http://localhost:4000/api/pending'
 		},

@@ -11,9 +11,12 @@ class SociosRouter{
 	start(){
 		sociosRouter.post('/crearsocio', adminAuthMiddleware, this.controller.createSocio);
 		sociosRouter.get('/jugadores', adminAuthMiddleware, this.controller.getJugadores);
-		sociosRouter.get('/socio', adminAuthMiddleware, this.controller.getSocioById);
+		sociosRouter.get('/socio/:id', adminAuthMiddleware, this.controller.getSocioById);
 		sociosRouter.get('/dardebaja/:socioid', adminAuthMiddleware, this.controller.darDeBaja);
+		sociosRouter.get('/dardealta/:socioid', adminAuthMiddleware, this.controller.darDeAlta);
+		sociosRouter.get('/socios', adminAuthMiddleware, this.controller.getAllSocios);
 		sociosRouter.post('/actualizarsocio', socioAuthMiddleware, this.controller.updateSocioData);
+		sociosRouter.get('/sociodeuda/:id', adminAuthMiddleware, this.controller.getSocioDeuda);
 		
 		return sociosRouter;
 	}

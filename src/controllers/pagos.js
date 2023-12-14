@@ -12,7 +12,7 @@ class PagosController{
 		try {
 			const {id} = req.user;
 			const mercadoPagoResponse = await this.pagosApi.crearOrdenDePago(id.toString(), req.params.sociocuotaid, req.user.deuda);
-			console.log(mercadoPagoResponse.body.init_point);
+			console.log(mercadoPagoResponse.body);
 			res.status(201).json({success: true, message: 'orden creada con exito', url: mercadoPagoResponse.body.init_point});
 		} catch (err) {
 			console.log(err.message);
@@ -24,6 +24,7 @@ class PagosController{
 		try {
 			if(req.query.type === 'payment'){
 				const order = await this.pagosApi.reciveWebhook(req.query['data.id']);	
+				console.log(order);
 				await this.cuotasApi.pagarCuota(order.body.payment_type_id, order.body.additional_info.items[0].id, order.body.additional_info.items[0].category_id, order.body.additional_info.items[0].description);
 			} 
 			res.status(201).json({success: true, message: 'webhook'});

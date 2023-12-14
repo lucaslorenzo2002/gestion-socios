@@ -4,7 +4,7 @@ const os = require('os');
 const logger = require('./src/utils/logger');
 const sequelize = require('./src/config/sequelizeConfig');
 require('./src/models/socio');
-//require('./src/models/cuota');
+require('./src/models/cuota');
 require('./src/models/administrador');
 require('./src/models/socio_cuota');
 

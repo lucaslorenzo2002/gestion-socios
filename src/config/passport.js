@@ -5,6 +5,9 @@ const localStrategy = require('passport-local').Strategy;
 const SociosDAO = require('../database/socios');
 const sociosDAO = new SociosDAO();
 
+const AdministradoresApi = require('../services/administradores');
+const administradoresApi = new AdministradoresApi();
+
 passport.use('login', new localStrategy({ 
 	usernameField: 'nroDocumento',
 	passReqToCallback: true 
@@ -20,6 +23,10 @@ passport.use('login', new localStrategy({
 		return done('numero de documento o contrasenia incorrectos');
 	}
 
+	if(socio.password === null){
+		return done('tu numero de documento esta asociado, completa el registro para ingresar');
+	}
+
 	const correctPassword = await bcrypt.compare(password, socio.password);
 
 	if (!socio || !correctPassword){
@@ -30,6 +37,11 @@ passport.use('login', new localStrategy({
 		return done('usuario no activado');
 	}
 
+	const administradorCorresponidenteAlClub = await administradoresApi.getAdministradorByClubAsociado(socio.dataValues.club_asociado);
+	process.env.MERCADO_PAGO_ACCESS_TOKEN = administradorCorresponidenteAlClub.dataValues.mercado_pago_access_token;
+	process.env.MERCADO_PAGO_CLIENT_ID = administradorCorresponidenteAlClub.dataValues.mercado_pago_client_id;
+	process.env.MERCADO_PAGO_SECRET_ID = administradorCorresponidenteAlClub.dataValues.mercado_pago_secret_id;
+	
 	return done(null, socio);
 }
 ));

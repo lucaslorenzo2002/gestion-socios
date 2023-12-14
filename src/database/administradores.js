@@ -26,6 +26,18 @@ class AdministradoresDAO{
 			logger.info(err);
 		}
 	}
+
+	async getAdministradorByClubAsociado(clubAsociado){
+		try{
+			return Administrador.findOne({
+				where: {
+					club_asociado: clubAsociado
+				}
+			});
+		}catch(err){
+			logger.info(err);
+		}
+	}
 }
 
 module.exports = AdministradoresDAO;

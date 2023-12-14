@@ -8,15 +8,8 @@ require('dotenv').config();
 	host: '127.0.0.1',
 	dialect:  'postgres',
 	//port: process.env.POSTGRESQL_PORT,
-	logging: false,
-	ssl: true,
-	dialectOptions: {
-		ssl: {
-			require: true,
-			rejectUnauthorized: false
-		}
-	}
-}); */
+	logging: false
+});  */
 
 //PRODUCTION CONFIG
 const sequelize = new Sequelize(process.env.PRODUCTION_DB_CONNECTION_STRING, {
@@ -30,6 +23,6 @@ const sequelize = new Sequelize(process.env.PRODUCTION_DB_CONNECTION_STRING, {
 			rejectUnauthorized: false,
 		},
 	},
-});
+}); 
 
 module.exports = sequelize;

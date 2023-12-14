@@ -112,9 +112,7 @@ const Socio = sequelize.define('Socio',{
 },
 );
 
-Socio.sync().then(() => {
-	return sequelize.query('ALTER SEQUENCE "socios_id_seq" RESTART WITH 10000;');
-});
+Socio.sync();
 
 Socio.hasOne(Token, {foreignKey: 'socio_nro_documento', sourceKey: 'nro_documento'});
 Token.belongsTo(Socio, {foreignKey: 'socio_nro_documento', sourceKey: 'nro_documento'});

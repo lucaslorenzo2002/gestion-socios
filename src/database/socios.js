@@ -149,11 +149,12 @@ class SociosDAO{
 		}
 	}
 
-	async updateSocioDeuda(deuda, socioId){
+	async updateSocioDeuda(deuda, socioId, clubAsociado){
 		try{
 			return Socio.update({deuda}, {
 				where: {
-					id: socioId
+					id: socioId,
+					club_asociado: clubAsociado
 				}
 			});
 		}catch(err){
@@ -184,6 +185,32 @@ class SociosDAO{
 	async darDeBaja(id){
 		try {
 			return Socio.update({estado_socio: 'BAJA'}, {
+				where:{
+					id,
+					estado_socio: 'ACTIVO'
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+	async darDeAlta(id){
+		try {
+			return Socio.update({estado_socio: 'ACTIVO'}, {
+				where:{
+					id,
+					estado_socio: 'BAJA'
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async getSocioDeuda(id){
+		try {
+			return Socio.findOne({
+				attributes: ['deuda'],
 				where:{
 					id
 				}

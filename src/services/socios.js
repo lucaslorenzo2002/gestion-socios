@@ -26,6 +26,10 @@ class SociosApi{
 		return await this.sociosDAO.getSocioById(id);
 	}
 
+	async getSocioDeuda(id){
+		return await this.sociosDAO.getSocioDeuda(id);
+	}
+
 	async filterSociosByTipo(tipoSocio){
 		return await this.sociosDAO.filterSociosByTipo(tipoSocio);
 	}
@@ -38,12 +42,16 @@ class SociosApi{
 		return await this.sociosDAO.getJugadores(clubAsociado);
 	}
 
-	async updateSocioDeuda(deuda, socioId){
-		return await this.sociosDAO.updateSocioDeuda(deuda, socioId);
+	async updateSocioDeuda(deuda, socioId, clubAsociado){
+		return await this.sociosDAO.updateSocioDeuda(deuda, socioId, clubAsociado);
 	}
 
 	async darDeBaja(id){
 		return await this.sociosDAO.darDeBaja(id);
+	}
+
+	async darDeAlta(id){
+		return await this.sociosDAO.darDeAlta(id);
 	}
 
 	async updateSocioData(fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, id){

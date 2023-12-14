@@ -44,7 +44,7 @@ class AuthController{
 			req.login(user,
 				{ session: false },
 				async (error) => {
-					if (error) return next(error);            
+					if (error) return next(error.message);            
 					const token = jwt.sign({ id: user.id}, 'adsfdcsfeds3w423ewdas');
 					res.cookie('token', token);
 					const socio = await this.sociosApi.getSocioById(user.id);
@@ -60,7 +60,7 @@ class AuthController{
 			res.cookie('token', token);
 			return res.status(201).json({administrador});
 		} catch (err) {
-			return res.status(401).json({ success: false, message: 'error al iniciar sesion'});
+			return res.status(401).json({ success: false, message: 'error al iniciar sesion: ' + err.message});
 		}
 	});
 

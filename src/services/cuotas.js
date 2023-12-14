@@ -1,5 +1,4 @@
 const CuotasDAO = require('../database/cuotas');
-const NotificacionesApi = require('../services/notificaciones');
 const SociosApi = require('../services/socios');
 const sendEmail = require('../utils/sendEmail');
 
@@ -7,16 +6,23 @@ class CuotasApi{
 	constructor(){
 		this.cuotasDAO = new CuotasDAO();
 		this.sociosApi = new SociosApi();
-		this.notificacionesApi = new NotificacionesApi();
 	}
 
 	async createCuota(monto, to, club){
-		//crear notificacion avisandole que debe pagar cuota
-		const fechaActual = new Date();
-		fechaActual.setMonth(fechaActual.getMonth() + 1);
-		const fechaDeVencimiento = fechaActual.toISOString().split('T')[0];
+		const fechaActualEmision = new Date();
+		fechaActualEmision.setDate(2);
+		const fechaISO = fechaActualEmision.toISOString();
+		const fechaEmision = fechaISO.split('T')[0];
 
-		const cuota = await this.cuotasDAO.createCuota({monto, to, club, fecha_vencimiento: fechaDeVencimiento});
+		const fechaActualVencimiento = new Date();
+		fechaActualVencimiento.setMonth(fechaActualVencimiento.getMonth() + 1);
+		fechaActualVencimiento.setDate(10);
+		let dia = fechaActualVencimiento.getDate();
+		let mes = fechaActualVencimiento.getMonth() + 1;
+		let anio = fechaActualVencimiento.getFullYear();
+		let fechaVencimiento = `${dia}/${mes}/${anio}`;
+
+		const cuota = await this.cuotasDAO.createCuota({monto, to, club, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento});
 		
 		const sociosTarget = await this.sociosApi.filterSociosByTipo(cuota.dataValues.to);	
 		const sociosIds = sociosTarget.map(socio => socio.dataValues.id);
@@ -33,16 +39,15 @@ class CuotasApi{
 		let subject = `${club}, AVISO DE NUEVA CUOTA`;
 			
 		for (let i = 0; i < sociosIds.length; i++) {		
-			if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO'){
-				await this.notificacionesApi.createNotificacion('NUEVA CUOTA', 'tenes nuevas cuotas pendientes', sociosTarget[i].dataValues.id);
-				await this.sociosApi.updateSocioDeuda(sociosTarget[i].dataValues.deuda + cuota.dataValues.monto, sociosIds[i]);		
+			if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO' && sociosTarget[i].dataValues.club_asociado === club){
+				await this.sociosApi.updateSocioDeuda(sociosTarget[i].dataValues.deuda + cuota.dataValues.monto, sociosIds[i], club);		
 				let emailTo = sociosTarget[i].dataValues.email;
 				await sendEmail(from, emailTo, subject, message);
 				this.cuotasDAO.createSocioCuota(`${cuota.dataValues.id}${sociosIds[i]}`, cuota.dataValues.id, sociosIds[i]);
 			}
 		}  
 
-		return cuota;
+		return cuota;  
 	}
 
 	async getAllCuotas(clubAsociado){
@@ -63,21 +68,20 @@ class CuotasApi{
 
 	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId){
 		const socioCuota = await this.cuotasDAO.getSocioCuota(socioCuotaId);
-		console.log(socioCuota);
 		const cuotaId = socioCuota.dataValues.cuota_id;
 		const cuota = await this.getCuota(cuotaId);
 		const monto = cuota.dataValues.monto;
+		console.log(formaDePago, deuda, socioId, socioCuotaId);
 		return await this.cuotasDAO.pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto);
+	}
+
+	async getSocioCuota(id){
+		return await this.cuotasDAO.getSocioCuota(id);
 	}
 
 	async getCuota(id){
 		return await this.cuotasDAO.getCuota(id);
 	}
-
-	async cuotas(){
-
-	}
-    
 }
 
 module.exports = CuotasApi;

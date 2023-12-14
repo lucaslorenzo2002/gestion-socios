@@ -54,11 +54,11 @@ class AuthApi{
 		}
 	
 		if(password.length < 8){
-			return ('la contrasenia debe tener al menos 8 caracteres');
+			return ('la contraseña debe tener al menos 8 caracteres');
 		}
 	
 		if(password !== confirmarPassword){
-			return ('las contrasenias no coinciden');
+			return ('las contraseñas no coinciden');
 		}
 
 		await this.verificateEmail(email, nroDocumento);
@@ -93,7 +93,8 @@ class AuthApi{
 		let resetUrl = `https://socialmediaclone-production-1e63.up.railway.app/resetpassword/${resetToken}`;
 
 		let message = `
-        <h2>HOLA ${user.username}!</h2>
+        <h2>PORFAVOR NO RESPONDER ESTE MENSAJE</h2>
+        <h3>Estimado Socio:</h3>
         <p>hace en click en la url proporcionada para cambiar tu contrasenia</p>
         <p>el link es valido por una hora</p> 
         <a href=${resetUrl} clicktracking=off>${resetUrl}</a>

@@ -29,5 +29,14 @@ const Socio_Cuota = sequelize.define('Socio_Cuota', {
 
 Socio.belongsToMany(Cuota, { through: Socio_Cuota, foreignKey: 'socio_id' });
 Cuota.belongsToMany(Socio, { through: Socio_Cuota, foreignKey: 'cuota_id' });
+Socio_Cuota.belongsTo(Socio);
+
+Socio_Cuota.sync({ force: false })
+	.then(() => {
+		console.log('La tabla Socio_Cuota ha sido creada correctamente');
+	})
+	.catch(err => {
+		console.error('Error al crear la tabla Socio_Cuota:', err.message);
+	});
 
 module.exports = Socio_Cuota;

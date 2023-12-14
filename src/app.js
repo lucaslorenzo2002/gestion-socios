@@ -91,5 +91,9 @@ const PagosRouter  = require('./routes/pagos');
 const pagosRouter = new PagosRouter();
 app.use('/api', pagosRouter.start());
 
+const CategoriasSocioRouter  = require('./routes/categoriasSocio');
+const categoriasSocioRouter = new CategoriasSocioRouter();
+app.use('/api', categoriasSocioRouter.start());
+
 
 module.exports = httpServer;

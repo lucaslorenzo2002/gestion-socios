@@ -60,11 +60,38 @@ class SociosController{
 		}
 	});	  
 
+	darDeAlta = asyncHandler(async(req, res) => {
+		try {
+			await this.sociosApi.darDeAlta(req.params.socioid);
+			res.status(201).json({success: true, message: 'socio activado exitosamente'});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
 	updateSocioData = asyncHandler(async(req, res) => {
 		try {
 			const{fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial} = req.body;
 			await this.sociosApi.updateSocioData(fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, req.user.id);
 			res.status(201).json({success: true, message: 'datos sincronizados con exito'});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
+	getAllSocios = asyncHandler(async(req, res) => {
+		try {
+			const socios = await this.sociosApi.getAllSocios(req.user.club_asociado);
+			res.status(201).json({success: true, data: socios});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	
+
+	getSocioDeuda = asyncHandler(async(req, res) => {
+		try {
+			const socioDeuda = await this.sociosApi.getSocioDeuda(req.params.id);
+			res.status(201).json({success: true, data: socioDeuda});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}

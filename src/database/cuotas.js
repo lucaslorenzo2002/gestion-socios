@@ -24,6 +24,7 @@ class CuotasDAO{
 
 	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto){
 		try{
+			console.log(formaDePago, deuda, socioId, socioCuotaId, monto);
 			const socioCuota = await this.getSocioCuota(socioCuotaId);
 			if(socioCuota.dataValues.estado === 'PAGO'){
 				return 'cuota ya pagada';

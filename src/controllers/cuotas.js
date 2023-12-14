@@ -9,7 +9,7 @@ class CuotasController{
 	createCuota = asyncHandler(async(req, res) => {
 		try {
 			const {monto, to} = req.body;
-			await this.cuotasApi.createCuota(monto, to, req.user.club_asociado);
+			await this.cuotasApi.createCuota(monto, to, req.user.club_asociado, req.user.email);
 			res.status(201).json({success: true, message: 'cuota generada con exito'});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
@@ -52,13 +52,21 @@ class CuotasController{
 		}
 	});	  
 
-	pagarCuota = asyncHandler(async(req, res) => {
+	pagarCuotaDesdeAdmin = asyncHandler(async(req, res) => {
 		try {
-			const{deuda, id, email} = req.user;
-			const{formaDePago, socioDni, cardNumber, cardExpirationMonth, cardExpirationYear, cardholderName, cvv} = req.body;
+			const{formaDePago, deuda, id} = req.body;
 			const{sociocuotaid} = req.params;
-			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, email, socioDni, cardNumber, cardExpirationMonth, cardExpirationYear, cardholderName, cvv);
-			res.status(201).json({success: true, message: 'cuota pagada con exito'});
+			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid);
+			res.status(201).json({success: true, message: 'cuota pagada por el admin con exito'});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	
+
+	getSocioCuota = asyncHandler(async(req, res) => {
+		try {
+			const cuota = await this.cuotasApi.getSocioCuota(req.params.cuotaid);
+			res.status(201).json({success: true, data: cuota});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}

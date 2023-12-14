@@ -13,7 +13,6 @@ const Cuota = sequelize.define('Cuota',{
 	},
 	fecha_emision:{
 		type: DataTypes.DATE,
-		defaultValue: DataTypes.NOW,
 		allowNull: false
 	},
 	fecha_vencimiento:{

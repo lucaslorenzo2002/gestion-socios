@@ -1,5 +1,5 @@
 const AdministradoresDAO = require('../database/administradores');
-const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 class AdministradoresApi{
 	constructor(){
@@ -14,6 +14,10 @@ class AdministradoresApi{
 		}
 		
 		return {success: true, admin: {id: administrador.dataValues.id, clubAsociado: administrador.dataValues.club_asociado}, message: 'sesion iniciada'};
+	}
+
+	async getAdministradorByClubAsociado(clubAsociado){
+		return await this.administradoresDAO.getAdministradorByClubAsociado(clubAsociado);	
 	}
     
 }
