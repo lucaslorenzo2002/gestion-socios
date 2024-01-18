@@ -63,6 +63,8 @@ class AuthController{
 			});
 			return res.status(201).json({administrador});
 		} catch (err) {
+			console.log(err);
+			console.log(err.message);
 			return res.status(401).json({ success: false, message: 'error al iniciar sesion: ' + err.message});
 		}
 	});

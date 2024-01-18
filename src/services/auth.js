@@ -29,6 +29,7 @@ class AuthApi{
         
 
 		let from = process.env.EMAIL_USER;
+		console.log(process.env.EMAIL_USER)
 
 		let to = socioEmail;
 
