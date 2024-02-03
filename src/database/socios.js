@@ -1,10 +1,17 @@
+const Actividad = require('../models/actividad');
+const Actividad_Socio = require('../models/actividad_socio');
+const CategoriaSocio = require('../models/categoriaSocio');
 const Socio = require('../models/socio');
+const TipoSocio = require('../models/tipoSocio');
 const logger = require('../utils/logger');
+const IncludeOptions = require('./includeOptions');
 
 class SociosDAO{
-	constructor(){
-	}
 
+	constructor(){
+		this.getSocioIncludeOptions = new IncludeOptions;
+	}
+	
 	async createSocio(newSocio){
 		try{
 			return Socio.create(newSocio);
@@ -13,21 +20,10 @@ class SociosDAO{
 		}
 	}
 
-	async getSocioByDocumento(nroDocumento){
-		try {
-			return Socio.findOne({
-				where: {
-					nro_documento: nroDocumento
-				}
-			});
-		} catch (err) {
-			logger.info(err);
-		}
-	}
-
 	async getUserByMail(email){
 		try{
 			return Socio.findOne({ 
+				include: this.getSocioIncludeOptions.getUserIncludeOptions(),
 				where: { 
 					email 
 				} 
@@ -40,6 +36,7 @@ class SociosDAO{
 	async getSocioById(id){
 		try{
 			return Socio.findOne({ 
+				include: this.getSocioIncludeOptions.getUserIncludeOptions(),
 				where: { 
 					id 
 				}
@@ -49,39 +46,151 @@ class SociosDAO{
 		}
 	}
 
-	async filterSociosByTipo(tipoSocio){
+	async filterSocios(tipoSocio, categoria, actividades, club){
 		try{
-			return Socio.findAll({ 
-				where: { 
-					tipo_socio: tipoSocio 
+			if(tipoSocio && !categoria && !actividades){
+				return await Socio.findAll({
+					include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+					where: { 
+						tipo_socio_id: tipoSocio,
+						club_asociado_id: club 
+					}
+				});
+			}else if(!tipoSocio && categoria && !actividades){
+				return await Socio.findAll({
+					include: this.getSocioIncludeOptions.getUserIncludeOptions(), 
+					where: { 
+						categoria_socio_id: categoria,
+						club_asociado_id: club 
+					}
+				});
+			}else if(!tipoSocio && !categoria && actividades){
+				const idSocio = await Actividad_Socio.findAll({
+					where:{
+						actividad_id: parseInt(actividades)
+					},
+					attributes: ['socio_id']
+				});
+
+				const sociosFiltrados = [];
+				for (let i = 0; i < idSocio.length; i++) {
+					let socio = await Socio.findOne({
+						include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+						where: {
+							id: idSocio[i].dataValues.socio_id,
+							club_asociado_id: club 
+						}
+					});
+					sociosFiltrados.push(socio.dataValues);
 				}
-			});
+				return sociosFiltrados;
+			}else if(tipoSocio && categoria && !actividades){
+				return await Socio.findAll({ 
+					include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+					where: { 
+						categoria_socio_id: categoria,
+						tipo_socio_id: tipoSocio,
+						club_asociado_id: club
+					}
+				});
+			}else if(tipoSocio && !categoria && actividades){
+				const idSocio = await Actividad_Socio.findAll({
+					where:{
+						actividad_id: parseInt(actividades)
+					},
+					attributes: ['socio_id']
+				});
+
+				const sociosFiltrados = [];
+
+				for (let i = 0; i < idSocio.length; i++) {
+					let socio = await Socio.findOne({
+						include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+						where: {
+							id: idSocio[i].dataValues.socio_id,
+							tipo_socio_id: tipoSocio,
+							club_asociado_id: club
+						}
+					});
+					if(socio){
+						sociosFiltrados.push(socio.dataValues);
+					}
+				}
+				return sociosFiltrados;
+			}else if(!tipoSocio && categoria && actividades){
+				const idSocio = await Actividad_Socio.findAll({
+					where:{
+						actividad_id: parseInt(actividades)
+					},
+					attributes: ['socio_id']
+				});
+
+				const sociosFiltrados = [];
+
+				for (let i = 0; i < idSocio.length; i++) {
+					let socio = await Socio.findOne({
+						include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+						where: {
+							id: idSocio[i].dataValues.socio_id,
+							categoria_socio_id: categoria,
+							club_asociado_id: club 
+						}
+					});
+					if(socio){
+						sociosFiltrados.push(socio.dataValues);
+					}
+				}
+				return sociosFiltrados;
+			}else if(tipoSocio && categoria && actividades){
+				const idSocio = await Actividad_Socio.findAll({
+					where:{
+						actividad_id: parseInt(actividades)
+					},
+					attributes: ['socio_id']
+				});
+
+				const sociosFiltrados = [];
+
+				for (let i = 0; i < idSocio.length; i++) {
+					let socio = await Socio.findOne({
+						include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+						where: {
+							id: idSocio[i].dataValues.socio_id,
+							tipo_socio_id: tipoSocio,
+							categoria_socio_id: categoria,
+							club_asociado_id: club 
+						}
+					});
+					if(socio){
+						sociosFiltrados.push(socio.dataValues);
+					}
+				}
+				return sociosFiltrados;
+			}
 		}catch(err){
 			logger.info(err);
 		}
 	}
 
-	async getJugadores(clubAsociado){
-		try{
-			return Socio.findAll({ 
-				where: { 
-					club_asociado: clubAsociado,
-					es_jugador: true
+	async getAllActividadSocios(clubAsociado){
+		try {
+			return await Actividad_Socio.findAll({
+				where:{
+					club_asociado_id: clubAsociado
 				}
 			});
-		}catch(err){
+		} catch (err) {
 			logger.info(err);
 		}
 	}
-
-	//ver como hacer la paginacion
+	
 	async getAllSocios(clubAsociado){
 		try{
-			return Socio.findAll({
+			return await Socio.findAll({
+				include: this.getSocioIncludeOptions.getUserIncludeOptions(),
 				where: {
-					club_asociado: clubAsociado
-				},
-				limit: 20
+					club_asociado_id: clubAsociado
+				}
 			});
 		}catch(err){
 			logger.info(err);
@@ -100,7 +209,7 @@ class SociosDAO{
 				},
 				{
 					where: {
-						nro_documento: nroDocumento
+						id: nroDocumento
 					}
 				}
 			);
@@ -154,7 +263,7 @@ class SociosDAO{
 			return Socio.update({deuda}, {
 				where: {
 					id: socioId,
-					club_asociado: clubAsociado
+					club_asociado_id: clubAsociado
 				}
 			});
 		}catch(err){
@@ -174,7 +283,7 @@ class SociosDAO{
 		try {
 			return Socio.update({validado: true}, {
 				where:{
-					nro_documento: socioNroDocumento
+					id: socioNroDocumento
 				}
 			});
 		} catch (err) {
@@ -194,6 +303,7 @@ class SociosDAO{
 			logger.info(err);
 		}
 	}
+
 	async darDeAlta(id){
 		try {
 			return Socio.update({estado_socio: 'ACTIVO'}, {
@@ -207,12 +317,52 @@ class SociosDAO{
 		}
 	}
 
+	async actualizarCategoriaDeSocio(id, categoria, club){
+		try {
+			return Socio.update({categoria_socio_id: categoria}, {
+				where:{
+					id,
+					club_asociado_id: club
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async actualizarTipoDeSocio(id, tipoSocio, club){
+		try {
+			return Socio.update({tipo_socio_id: tipoSocio}, {
+				where:{
+					id,
+					club_asociado_id: club
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
 	async getSocioDeuda(id){
 		try {
 			return Socio.findOne({
 				attributes: ['deuda'],
 				where:{
 					id
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async filterSociosByTipo(tipoSocio, club){
+		try {
+			return Socio.findAll({
+				include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+				where:{
+					tipo_socio_id: tipoSocio,
+					club_asociado_id: club
 				}
 			});
 		} catch (err) {

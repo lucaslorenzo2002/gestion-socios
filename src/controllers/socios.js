@@ -1,31 +1,33 @@
 const asyncHandler = require('express-async-handler');
 const SociosApi = require('../services/socios');
-const formidable = require('formidable');
+const ActividadesApi = require('../services/actividades');
 
 class SociosController{
 	constructor(){
 		this.sociosApi = new SociosApi();
+		this.actividadesApi = new ActividadesApi();
 	}
 
 	createSocio = asyncHandler(async(req, res) => {
 		try {
-			const { nombres, apellido, nroDocumento, tipoDeSocio } = req.body;
+			const { nombres, apellido, id, categoria, tipoSocio } = req.body;
 			const fileTempFilePath = req.files?.fotoDePerfil?.tempFilePath || null;
 			const fileName = req.files?.fotoDePerfil.name || null;
 			const fileUrl = req.files ? `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${fileName}` : null;
 
 			await this.sociosApi.createSocio(
-				nroDocumento,
+				id,
 				nombres,
 				apellido,
-				tipoDeSocio,
-				req.user.club_asociado,
+				parseInt(categoria),
+				req.user.club_asociado_id,
 				fileTempFilePath,
 				fileName,
-				fileUrl
+				fileUrl,
+				parseInt(tipoSocio)
+			); 
 
-			);  
-			
+			await this.actividadesApi.createSocioActividad(id, req.body['actividades[]']);
 
 			res.status(200).json({success: true, message: 'nuevo socio registrado'});
 		} catch (err) {
@@ -35,7 +37,7 @@ class SociosController{
 
 	getJugadores = asyncHandler(async(req, res) => {
 		try {
-			const jugadores = await this.sociosApi.getJugadores(req.user.club_asociado);
+			const jugadores = await this.sociosApi.getJugadores(req.user.club_asociado_id);
 			res.status(201).json({success: true, data: jugadores});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err});
@@ -81,7 +83,7 @@ class SociosController{
 
 	getAllSocios = asyncHandler(async(req, res) => {
 		try {
-			const socios = await this.sociosApi.getAllSocios(req.user.club_asociado);
+			const socios = await this.sociosApi.getAllSocios(req.user.club_asociado_id);
 			res.status(201).json({success: true, data: socios});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
@@ -95,7 +97,43 @@ class SociosController{
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
-	});	  
+	});	
+
+	actualizarCategoriaDeSocio = asyncHandler(async(req, res) => {
+		try {
+			await this.sociosApi.actualizarCategoriaDeSocio(req.body.id, parseInt(req.body.categoria), req.user.club_asociado_id);
+			res.status(201).json({success: true, message: 'la categoria del socio ha sido actualizada'});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	 
+
+	actualizarTipoSocio = asyncHandler(async(req, res) => {
+		try {
+			await this.sociosApi.actualizarTipoSocio(req.body.id, parseInt(req.body.tipoSocio), req.user.club_asociado_id);
+			res.status(201).json({success: true, message: 'el tipo de socio ha sido actualizado'});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	 
+
+	actualizarActividadesSocio = asyncHandler(async(req, res) => {
+		try {
+			await this.sociosApi.actualizarActividadesSocio(req.body.id, req.body.actividades);
+			res.status(201).json({success: true, message: 'las actividades del socio han sido actualizadas'});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	 
+
+	filterSocios = asyncHandler(async(req, res) => {
+		try {
+			const sociosFiltrados = await this.sociosApi.filterSocios(req.body.tipoSocio, req.body.categoria, req.body.actividades, req.user.club_asociado_id);
+			res.status(201).json({success: true, data: sociosFiltrados});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	 
 
 }
 

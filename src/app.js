@@ -9,6 +9,7 @@ const { ApolloServer } = require('@apollo/server');
 const {expressMiddleware} = require('@apollo/server/express4');
 const cookieParser = require('cookie-parser');
 const fileUpload = require('express-fileupload');
+const cron = require('node-cron');
 
 //SETTINGS
 const app = express(); 
@@ -37,7 +38,7 @@ app.use(fileUpload({
 }));
 app.use(cookieParser());
 app.use(cors({
-	origin: 'http://localhost:5173',
+	origin: 'http://localhost:5173',//ver como hacer para que dos origenes tengan acceso
 	methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 	allowedHeaders: ['Access-Control-Allow-Origin', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
 	credentials: true
@@ -94,6 +95,15 @@ app.use('/api', pagosRouter.start());
 const CategoriasSocioRouter  = require('./routes/categoriasSocio');
 const categoriasSocioRouter = new CategoriasSocioRouter();
 app.use('/api', categoriasSocioRouter.start());
+
+const ActividadesRouter  = require('./routes/actividades');
+const actividadesRouter = new ActividadesRouter();
+app.use('/api', actividadesRouter.start());
+
+const TiposSocioRouter  = require('./routes/tiposSocio');
+const tiposSocioRouter = new TiposSocioRouter();
+app.use('/api', tiposSocioRouter.start());
+
 
 
 module.exports = httpServer;

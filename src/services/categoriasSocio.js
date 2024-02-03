@@ -13,6 +13,9 @@ class CateogriasSocioApi{
 		return await this.categoriasSocioDAO.getCategoriasSocio(club);
 	}
 
+	async categoriasDeSocioConCuotasCreadas(club){
+		return await this.categoriasSocioDAO.categoriasDeSocioConCuotasCreadas(club);
+	}
 }
 
 module.exports = CateogriasSocioApi;

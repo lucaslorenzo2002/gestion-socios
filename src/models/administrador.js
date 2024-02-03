@@ -7,24 +7,18 @@ const Administrador = sequelize.define('Administrador',{
 		autoIncrement: true,
 		primaryKey: true
 	},
-	club_asociado:{
-		type: DataTypes.STRING
-	},
 	codigo_administrador: {
 		type: DataTypes.STRING,
 		allowNull: false
 	},
 	mercado_pago_access_token:{
-		type: DataTypes.STRING,
-		allowNull: false
+		type: DataTypes.STRING
 	},
 	mercado_pago_client_id:{
-		type: DataTypes.STRING,
-		allowNull: false
+		type: DataTypes.STRING
 	},
 	mercado_pago_secret_id:{
-		type: DataTypes.STRING,
-		allowNull: false
+		type: DataTypes.STRING
 	},
 }, {
 	underscored: true

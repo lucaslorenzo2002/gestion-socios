@@ -17,6 +17,10 @@ class SociosRouter{
 		sociosRouter.get('/socios', adminAuthMiddleware, this.controller.getAllSocios);
 		sociosRouter.post('/actualizarsocio', socioAuthMiddleware, this.controller.updateSocioData);
 		sociosRouter.get('/sociodeuda/:id', adminAuthMiddleware, this.controller.getSocioDeuda);
+		sociosRouter.post('/actualizarcategoria', adminAuthMiddleware, this.controller.actualizarCategoriaDeSocio);
+		sociosRouter.post('/actualizartiposocio', adminAuthMiddleware, this.controller.actualizarTipoSocio);
+		sociosRouter.post('/actualizaractividadessocio', adminAuthMiddleware, this.controller.actualizarActividadesSocio);
+		sociosRouter.post('/filtrarsocios', adminAuthMiddleware, this.controller.filterSocios);
 		
 		return sociosRouter;
 	}

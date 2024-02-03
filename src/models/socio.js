@@ -1,13 +1,19 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/sequelizeConfig');
 const Token = require('./token');
-const Notificacion = require('./notificacion');
+const CategoriaSocio = require('./categoriaSocio');
+const TipoSocio = require('./tipoSocio');
+const Club = require('./club');
+const Administrador = require('./administrador');
+const Cuota = require('./cuota');
+const CuotaProgramada = require('./cuotaProgramada');
 
 const Socio = sequelize.define('Socio',{
 	id: {
 		type: DataTypes.INTEGER,
-		autoIncrement: true,
-		primaryKey: true
+		primaryKey: true,
+		allowNull: false,
+		unique: true
 	},
 	apellido: {
 		type: DataTypes.STRING,
@@ -31,13 +37,6 @@ const Socio = sequelize.define('Socio',{
 		type: DataTypes.INTEGER
 	},
 	foto_de_perfil: DataTypes.STRING,
-	tipo_de_grupo:{
-		type: DataTypes.STRING
-	},
-	tipo_socio:{
-		type: DataTypes.STRING,
-		allowNull: false
-	},
 	//LO TIENE QUE DEFINIR EL ADMIN
 	estado_socio:{
 		type: DataTypes.STRING,
@@ -45,11 +44,6 @@ const Socio = sequelize.define('Socio',{
 	},
 	tipo_doc:{
 		type: DataTypes.STRING
-	},
-	nro_documento: {
-		type: DataTypes.STRING,
-		allowNull: false,
-		primaryKey: true
 	},
 	sexo:{
 		type: DataTypes.STRING
@@ -67,10 +61,6 @@ const Socio = sequelize.define('Socio',{
 	deuda:{
 		type: DataTypes.INTEGER,
 		defaultValue: 0
-	},
-	club_asociado:{
-		type: DataTypes.STRING,
-		allowNull: false
 	},
 	codigo_postal:{
 		type: DataTypes.INTEGER
@@ -107,17 +97,32 @@ const Socio = sequelize.define('Socio',{
 		type: DataTypes.INTEGER,
 	}
 }, {
-
 	underscored: true
 },
 );
 
 Socio.sync();
 
-Socio.hasOne(Token, {foreignKey: 'socio_nro_documento', sourceKey: 'nro_documento'});
-Token.belongsTo(Socio, {foreignKey: 'socio_nro_documento', sourceKey: 'nro_documento'});
+Socio.hasOne(Token, {foreignKey: 'socio_id', sourceKey: 'id'});
+Token.belongsTo(Socio, {foreignKey: 'socio_id', sourceKey: 'id'});
 
-Socio.hasOne(Notificacion, {foreignKey: 'socio_id', sourceKey: 'id'});
-Notificacion.belongsTo(Socio, {foreignKey: 'socio_id', sourceKey: 'id'});
+TipoSocio.hasMany(Socio, {foreignKey: 'tipo_socio_id', sourceKey: 'id'});
+Socio.belongsTo(TipoSocio, {foreignKey: 'tipo_socio_id', sourceKey: 'id', as: 'tipo_socio'});
+
+CategoriaSocio.hasMany(Socio, {foreignKey: 'categoria_socio_id', sourceKey: 'id'});
+Socio.belongsTo(CategoriaSocio, {foreignKey: 'categoria_socio_id', sourceKey: 'id', as: 'categoria'});
+
+Club.hasMany(Socio, {foreignKey: 'club_asociado_id', sourceKey: 'id'});
+Socio.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'club_asociado'});
+
+Club.hasMany(Administrador, {foreignKey: 'club_asociado_id', sourceKey: 'id'});
+Administrador.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'club_asociado'});
+
+Club.hasMany(Cuota, {foreignKey: 'club_asociado_id', sourceKey: 'id'});
+Cuota.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'club_asociado'});
+
+Club.hasMany(CuotaProgramada, {foreignKey: 'club_asociado_id', sourceKey: 'id'});
+CuotaProgramada.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'club_asociado'});
+
 
 module.exports = Socio;

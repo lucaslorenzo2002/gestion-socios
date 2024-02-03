@@ -29,7 +29,7 @@ class AuthApi{
         
 
 		let from = process.env.EMAIL_USER;
-		console.log(process.env.EMAIL_USER)
+		console.log(process.env.EMAIL_USER);
 
 		let to = socioEmail;
 
@@ -70,7 +70,7 @@ class AuthApi{
 
 	async validateUser(tokenParam){
 		const token = await this.TokenDAO.findOneTokenByToken(tokenParam);
-		await this.sociosDAO.activateSocio(token.dataValues.socio_nro_documento);
+		await this.sociosDAO.activateSocio(token.dataValues.socio_id);
 	}
 
 	async resetPasswordRequest(userMail){

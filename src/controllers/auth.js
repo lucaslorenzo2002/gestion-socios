@@ -19,7 +19,7 @@ class AuthController{
 
 			res.status(201).json({success: true, message: typeof newSocio === 'string' ? newSocio : 'Socio confirmado, verificar mail'});
 		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err});
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 
@@ -57,14 +57,12 @@ class AuthController{
 		try {
 			const administrador = await this.administradoresApi.logInAdministrador(req.body.codigoAdministrador);
 			const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
-			res.cookie('token', token, { 
+			res.cookie('token', token/* , { 
 				sameSite: 'None', 
 				secure: true 
-			});
+			} */);
 			return res.status(201).json({administrador});
 		} catch (err) {
-			console.log(err);
-			console.log(err.message);
 			return res.status(401).json({ success: false, message: 'error al iniciar sesion: ' + err.message});
 		}
 	});

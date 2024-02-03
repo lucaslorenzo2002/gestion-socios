@@ -1,10 +1,38 @@
+const CategoriaSocio = require('../models/categoriaSocio');
 const Cuota = require('../models/cuota');
 const Socio = require('../models/socio');
 const Socio_Cuota = require('../models/socio_cuota');
+const CuotaProgramada = require('../models/cuotaProgramada');
 const formatDateString = require('../utils/formatDateString');
 const logger = require('../utils/logger');
+const CategoriasSocioDAO = require('./categoriasSocio');
+const TipoSocio = require('../models/tipoSocio');
 
 class CuotasDAO{
+	constructor(){
+		this.categoriasSocioDAO = new CategoriasSocioDAO();
+	}
+
+	async programarCuota(newCuotaProgramada){
+		try {
+			return await CuotaProgramada.create(newCuotaProgramada);
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async findCuotaProgrmada(to, club){
+		try {
+			return await CuotaProgramada.findOne({
+				where: {
+					tipo_socio_id: parseInt(to),
+					club_asociado_id: club
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
 
 	async createCuota(newCuota){
 		try{
@@ -21,7 +49,7 @@ class CuotasDAO{
 			logger.info(err);
 		}
 	}
-
+	
 	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto){
 		try{
 			console.log(formaDePago, deuda, socioId, socioCuotaId, monto);
@@ -57,7 +85,7 @@ class CuotasDAO{
 		try{
 			return await Socio_Cuota.findOne({
 				where:{
-					id
+					id: parseInt(id)
 				}
 			});
 		}catch(err){
@@ -70,18 +98,6 @@ class CuotasDAO{
 			return await Cuota.findOne({
 				where:{
 					id
-				}
-			});
-		}catch(err){
-			logger.info(err);
-		}
-	}
-
-	async getAllCuotas(clubAsociado){
-		try{
-			return await Cuota.findAll({
-				where: {
-					club: clubAsociado
 				}
 			});
 		}catch(err){
@@ -108,7 +124,6 @@ class CuotasDAO{
 					fecha_emision:formatDateString(cuota.fecha_emision),
 					fecha_vencimiento: formatDateString(cuota.fecha_vencimiento),
 				});
-				
 			}
 
 			return misCuotasData;
@@ -176,6 +191,74 @@ class CuotasDAO{
 			logger.info(err);
 		}
 	} 
+
+	async getAllCuotas(clubAsociado){
+		try{
+			const cuotas = await Cuota.findAll({
+				include: [{
+					model: TipoSocio,
+					attributes: ['tipo_socio'],
+					as: 'to'
+				}],
+				where: {
+					club_asociado_id: clubAsociado
+				},
+				order: [['id', 'DESC']]
+			});
+			if(!cuotas) return 'el club no genero ninguna cuota';
+			return cuotas;
+		}catch(err){
+			logger.info(err);
+		}
+	}
+
+	async getCuotasProgramadas(club){
+		try {
+			const cuotasProgramada = CuotaProgramada.findAll({
+				include: [{
+					model: TipoSocio,
+					attributes: ['tipo_socio'],
+					as: 'to'
+				}],
+				where:{
+					club_asociado_id: club
+				}
+			});
+			if(!cuotasProgramada) return 'el club no posee cuotas programadas';
+
+			return cuotasProgramada;
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async eliminarCuotaProgramada(club, to){
+		try {
+			return await CuotaProgramada.destroy({
+				where:{
+					club_asociado_id: club,
+					tipo_socio_id: to
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async actualizarValorDeCuota(club, to, monto){
+		try {
+			return await CuotaProgramada.update({
+				monto
+			}, {
+				where:{
+					club_asociado_id: club,
+					tipo_socio_id: to
+				}
+			});
+		} catch (err) {
+			logger.info(err.message);
+		}
+	}
 
 }
 

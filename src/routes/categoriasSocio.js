@@ -10,6 +10,7 @@ class CategoriasSocioRouter{
 	start(){
 		categoriasSocioRouter.post('/categoriasocio', adminAuth, this.controller.createCategoriaSocio);
 		categoriasSocioRouter.get('/categoriasocio', adminAuth, this.controller.getCategoriasSocio);
+		categoriasSocioRouter.get('/categoriassocioconcuotascreadas', adminAuth, this.controller.categoriasDeSocioConCuotasCreadas);
 
 		return categoriasSocioRouter;
 	}

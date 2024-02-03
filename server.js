@@ -5,8 +5,11 @@ const logger = require('./src/utils/logger');
 const sequelize = require('./src/config/sequelizeConfig');
 require('./src/models/socio');
 require('./src/models/cuota');
+require('./src/models/actividad');
 require('./src/models/administrador');
 require('./src/models/socio_cuota');
+require('./src/models/actividad_socio');
+require('./src/models/club');
 
 async function server (){
 	const numCpus = os.cpus().length;
