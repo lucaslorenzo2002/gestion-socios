@@ -12,8 +12,9 @@ class AuthRouter{
 		authRouter.post('/login', this.controller.login);
 		authRouter.post('/loginadmin', this.controller.loginAdmin);
 		authRouter.get('/logout', this.controller.logout);
-		//authRouter.post('/resetpasswordrequest', this.controller.resetPasswordRequest);
-		//authRouter.post('/resetpassword/:token', this.controller.resetPassword);
+		authRouter.post('/resetpasswordrequest', this.controller.resetPasswordRequest);
+		authRouter.get('/resetpassword/:token', this.controller.resetPasswordUI);
+		authRouter.post('/resetpassword/:token', this.controller.resetPassword);
 		
 		return authRouter;
 	}

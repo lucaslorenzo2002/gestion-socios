@@ -12,12 +12,26 @@ class CategoriasSocioDAO{
 		}
 	}
 
-	async getCategoriasSocio(club){
+	async getCategoriasActividad(club, actividadId){
 		try{
 			return await CategoriaSocio.findAll({
 				attributes: ['categoria', 'id'],
 				where: {
-					club
+					club,
+					actividad_id: actividadId
+				}
+			});
+		}catch(err){
+			logger.info(err);
+		}
+	}
+
+	async getAllCategorias(club){
+		try{
+			return await CategoriaSocio.findAll({
+				attributes: ['categoria', 'id', 'actividad_id'],
+				where: {
+					club,
 				}
 			});
 		}catch(err){

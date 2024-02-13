@@ -17,7 +17,7 @@ class AuthController{
 			const {email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular} = req.body;
 			const newSocio = await this.authApi.completeSocioRegister(email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular);
 
-			res.status(201).json({success: true, message: typeof newSocio === 'string' ? newSocio : 'Socio confirmado, verificar mail'});
+			res.status(201).json({success: true, message: typeof newSocio === 'string' ? newSocio : 'Ha sido registrado con exito, verifique su email para iniciar sesion'});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
@@ -27,7 +27,7 @@ class AuthController{
 		try {
 			const {token} = req.params;
 			await this.authApi.validateUser(token);
-			res.status(201).json({ success: true, message: 'socio validado inicie sesion para usar la app'});
+			res.render('usuarioValidado');
 		} catch (error) {
 			res.status(500).json({success: false, message: 'hubo un error ' + error});
 		}
@@ -36,6 +36,7 @@ class AuthController{
 	login = asyncHandler(async (req, res, next) => {
 		passport.authenticate('login', (err, user, info) => {
 			if (err) {
+				console.log(err);
 				return next(err);
 			}
 			if (!user) {
@@ -57,10 +58,10 @@ class AuthController{
 		try {
 			const administrador = await this.administradoresApi.logInAdministrador(req.body.codigoAdministrador);
 			const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
-			res.cookie('token', token/* , { 
+			res.cookie('token', token, { 
 				sameSite: 'None', 
 				secure: true 
-			} */);
+			});
 			return res.status(201).json({administrador});
 		} catch (err) {
 			return res.status(401).json({ success: false, message: 'error al iniciar sesion: ' + err.message});
@@ -80,7 +81,8 @@ class AuthController{
 			return res.status(401).json({ success: false, message: 'error al iniciar sesion'});
 		}
 	});
-/* 	resetPasswordRequest = asyncHandler(async(req, res) => {
+	
+	resetPasswordRequest = asyncHandler(async(req, res) => {
 		try {
 			await this.authApi.resetPasswordRequest(req.body.email);
 			res.status(200).json({success: true, message: 'mail enviado'});
@@ -89,14 +91,23 @@ class AuthController{
 		}
 	}); 
 
-	resetPassword = asyncHandler(async(req, res) => {
+	resetPasswordUI = asyncHandler(async(req, res) => {
 		try {
-			await this.authApi.resetPassword(req.params.token, req.body.newPassword, req.body.confirmNewPassword);
-			res.status(200).json({success: true, message: 'contrasenia actualizada'});
+			const {token} = req.params;
+			res.render('updatePassword', {token});
 		} catch (error) {
 			res.status(500).json({success: false, message: 'hubo un error ' + error});
 		}
-	});  */
+	});  
+
+	resetPassword = asyncHandler(async(req, res) => {
+		try {
+			await this.authApi.resetPassword(req.params.token, req.body.newPassword, req.body.confirmNewPassword);
+			res.status(200).json({mensaje: 'la contraseña ha sido actualizada con exito, inicie sesion nuevamente'});
+		} catch (error) {
+			res.status(500).json({success: false, message: 'hubo un error ' + error.message});
+		}
+	});  
 }
 
 module.exports = AuthController;

@@ -29,15 +29,16 @@ class CuotasApi{
 			;
 			let from = process.env.EMAIL_USER;
 			let subject = `${club.nombre}, AVISO DE NUEVA CUOTA`;
-			console.log(club);
-			
+
 			for (let i = 0; i < sociosIds.length; i++) {		
-				if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO' && sociosTarget[i].dataValues.club_asociado_id === club.id){
+				if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO' && sociosTarget[i].dataValues.meses_abonados === 0){
 					await this.sociosApi.updateSocioDeuda(sociosTarget[i].dataValues.deuda + cuota.dataValues.monto, sociosIds[i], club.id);		
 					let emailTo = sociosTarget[i].dataValues.email;
 					await sendEmail(from, emailTo, subject, message);
-					let socioIdString = sociosIds[i].toString().slice(-6);
-					this.cuotasDAO.createSocioCuota(parseInt(`${cuota.dataValues.id}${socioIdString}`), cuota.dataValues.id, sociosIds[i]);
+					let socioIdString = sociosIds[i].toString().slice(-4);
+					this.cuotasDAO.createSocioCuota({id: parseInt(`${cuota.dataValues.id}${socioIdString}`), cuota_id: cuota.dataValues.id, socio_id: sociosIds[i]});
+				}else if(sociosTarget[i].dataValues.meses_abonados > 0){
+					await this.sociosApi.updateSocioMesesAbonados(sociosTarget[i].dataValues.meses_abonados - 1, club.id, sociosIds[i]);
 				}
 			}
 		} catch (err) {
@@ -45,7 +46,7 @@ class CuotasApi{
 		}
 	}
 
-	async programarCuota(fechaEmision, monto, to, club){
+	async programarCuota(fechaEmision, monto, to, abonoMultiple, maxCantAbonoMult, club){
 		try {
 			const cuotaYaExistente = await this.cuotasDAO.findCuotaProgrmada(to, club.id);
 			if(cuotaYaExistente) return true;
@@ -67,12 +68,12 @@ class CuotasApi{
 		
 			if(fechaEmisionMoment.isSameOrBefore(moment())){
 				const cuota = await this.cuotasDAO.createCuota({monto, tipo_socio_id: parseInt(to), club_asociado_id:club.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento});  
-				await this.cuotasDAO.programarCuota({monto, tipo_socio_id: parseInt(to), club_asociado_id: club.id});
+				await this.cuotasDAO.programarCuota({monto, tipo_socio_id: parseInt(to), abono_multiple: abonoMultiple, maxima_cantidad_abono_multiple: maxCantAbonoMult, club_asociado_id: club.id});
 				await this.asignarCuotaASocios(cuota, club);
 				await this.cronJobCuota(monto, to, club, fechaEmision, fechaVencimiento);
 				return cuota;
 			}else{
-				await this.cuotasDAO.programarCuota({monto, tipo_socio_id: parseInt(to), club_asociado_id:club.id});
+				await this.cuotasDAO.programarCuota({monto, tipo_socio_id: parseInt(to), club_asociado_id:club.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento});
 				await this.cronJobCuota(monto, to, club, fechaEmision, fechaVencimiento);
 			}
 		} catch (err) {
@@ -119,13 +120,23 @@ class CuotasApi{
 		return await this.cuotasDAO.getAllCuotasSocio(socioId);
 	}
 
-	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId){
+	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, mesesAbonados, clubAsociado){
 		const socioCuota = await this.cuotasDAO.getSocioCuota(socioCuotaId);
 		const cuotaId = socioCuota.dataValues.cuota_id;
 		const cuota = await this.getCuota(cuotaId);
 		const monto = cuota.dataValues.monto;
-		console.log(formaDePago, deuda, socioId, socioCuotaId);
-		return await this.cuotasDAO.pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto);
+		let socioIdString = socioId.toString().slice(-3);
+		for (let i = 1; i < mesesAbonados; i++) {
+			await this.cuotasDAO.createSocioCuota({
+				id: parseInt(`${cuotaId}${i}${socioIdString}`), 
+				forma_de_pago: formaDePago,
+				estado: 'PAGO',
+				fecha_pago:new Date(),
+				socio_id:socioId,
+				cuota_id: cuotaId
+			});
+		}
+		return await this.cuotasDAO.pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto, mesesAbonados, clubAsociado);
 	}
 
 	async getSocioCuota(id){
@@ -152,6 +163,10 @@ class CuotasApi{
 
 	async actualizarValorDeCuota(club, to, monto){
 		return await this.cuotasDAO.actualizarValorDeCuota(club, to, monto);
+	}
+
+	async getLast3CuotasPagas(socioId){
+		return await this.cuotasDAO.getLast3CuotasPagas(socioId);
 	}
 	//FEATURE ENVIAR MAIL PERSONALIZADO
 }

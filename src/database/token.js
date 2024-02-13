@@ -23,9 +23,13 @@ class TokenDAO{
 		}
 	}
 
-	async deleteOneToken(){
+	async deleteOneToken(socioId){
 		try {
-			return await Token.destroy();
+			return await Token.destroy({
+				where:{
+					socio_id: socioId
+				}
+			});
 		} catch (err) {
 			logger.info(err);
 		}

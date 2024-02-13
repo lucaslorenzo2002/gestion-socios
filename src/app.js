@@ -9,7 +9,7 @@ const { ApolloServer } = require('@apollo/server');
 const {expressMiddleware} = require('@apollo/server/express4');
 const cookieParser = require('cookie-parser');
 const fileUpload = require('express-fileupload');
-const cron = require('node-cron');
+const exphbs = require('express-handlebars');
 
 //SETTINGS
 const app = express(); 
@@ -45,6 +45,11 @@ app.use(cors({
 })); 
 app.use(passport.initialize());
 app.use(passport.session());
+app.set('views', path.join(__dirname, 'views'));
+app.engine('handlebars', exphbs.engine({
+	layoutsDir: path.join(app.get('views'), 'layouts')
+}));
+app.set('view engine', 'handlebars');
 
 //GRAPHQL
 const resolvers = require('./graphql/socios/socios.resolvers');

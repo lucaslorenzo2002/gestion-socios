@@ -17,7 +17,7 @@ passport.use('login', new localStrategy({
 		return done('por favor complete todos los campos');
 	}
 
-	const socio = await sociosDAO.getSocioByDocumento(nroDocumento);
+	const socio = await sociosDAO.getSocioById(nroDocumento);
 	
 	if(!socio){
 		return done('numero de documento o contrasenia incorrectos');
@@ -37,7 +37,7 @@ passport.use('login', new localStrategy({
 		return done('usuario no activado');
 	}
 
-	const administradorCorresponidenteAlClub = await administradoresApi.getAdministradorByClubAsociado(socio.dataValues.club_asociado);
+	const administradorCorresponidenteAlClub = await administradoresApi.getAdministradorByClubAsociado(socio.dataValues.club_asociado_id);
 	process.env.MERCADO_PAGO_ACCESS_TOKEN = administradorCorresponidenteAlClub.dataValues.mercado_pago_access_token;
 	process.env.MERCADO_PAGO_CLIENT_ID = administradorCorresponidenteAlClub.dataValues.mercado_pago_client_id;
 	process.env.MERCADO_PAGO_SECRET_ID = administradorCorresponidenteAlClub.dataValues.mercado_pago_secret_id;

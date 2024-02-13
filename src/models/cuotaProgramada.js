@@ -11,6 +11,12 @@ const CuotaProgramada = sequelize.define('CuotaProgramada',{
 	monto:{
 		type: DataTypes.INTEGER,
 		allowNull: false
+	},
+	abono_multiple:{
+		type: DataTypes.BOOLEAN
+	},
+	maxima_cantidad_abono_multiple:{
+		type: DataTypes.INTEGER
 	}
 }, {
 	underscored: true,

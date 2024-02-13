@@ -9,7 +9,7 @@ const Cuota = sequelize.define('Cuota',{
 		primaryKey: true
 	},
 	monto:{
-		type: DataTypes.INTEGER,
+		type: DataTypes.DOUBLE,
 		allowNull: false
 	},
 	fecha_emision:{

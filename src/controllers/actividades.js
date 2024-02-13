@@ -24,6 +24,15 @@ class ActividadesController{
 		}
 	});	  
 
+	getSocioActividades = asyncHandler(async(req, res) => {
+		try {
+			const actividades = await this.actividadesApi.getSocioActividad(req.user.id);
+			res.status(201).json({success: true, data: actividades});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
 	eliminarActividad = asyncHandler(async(req, res) => {
 		try {
 			await this.actividadesApi.eliminarActividad(req.params.id, req.user.club_asociado.nombre);

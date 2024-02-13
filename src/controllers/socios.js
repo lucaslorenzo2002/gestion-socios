@@ -10,13 +10,13 @@ class SociosController{
 
 	createSocio = asyncHandler(async(req, res) => {
 		try {
-			const { nombres, apellido, id, categoria, tipoSocio } = req.body;
+			const { nombres, apellido, id, categoria, tipoSocio, actividades } = req.body;
 			const fileTempFilePath = req.files?.fotoDePerfil?.tempFilePath || null;
 			const fileName = req.files?.fotoDePerfil.name || null;
 			const fileUrl = req.files ? `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${fileName}` : null;
-
+		
 			await this.sociosApi.createSocio(
-				id,
+				parseInt(id),
 				nombres,
 				apellido,
 				parseInt(categoria),
@@ -24,10 +24,9 @@ class SociosController{
 				fileTempFilePath,
 				fileName,
 				fileUrl,
-				parseInt(tipoSocio)
-			); 
-
-			await this.actividadesApi.createSocioActividad(id, req.body['actividades[]']);
+				parseInt(tipoSocio),
+				parseInt(actividades),
+			);
 
 			res.status(200).json({success: true, message: 'nuevo socio registrado'});
 		} catch (err) {
@@ -47,6 +46,15 @@ class SociosController{
 	getSocioById = asyncHandler(async(req, res) => {
 		try {
 			const socio = await this.sociosApi.getSocioById(req.params.id);
+			res.status(201).json({success: true, data: socio});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
+	getSocioByIdSocio = asyncHandler(async(req, res) => {
+		try {
+			const socio = await this.sociosApi.getSocioById(req.user.id);
 			res.status(201).json({success: true, data: socio});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
@@ -73,10 +81,12 @@ class SociosController{
 
 	updateSocioData = asyncHandler(async(req, res) => {
 		try {
-			const{fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial} = req.body;
-			await this.sociosApi.updateSocioData(fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, req.user.id);
-			res.status(201).json({success: true, message: 'datos sincronizados con exito'});
+			const{fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial} = req.body;
+			console.log(req.body);
+			await this.sociosApi.updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, req.user.id);
+			res.status(201).json({success: true, message: 'datos sincronizados con el club'});
 		} catch (err) {
+			console.log(err.message);
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
@@ -86,6 +96,7 @@ class SociosController{
 			const socios = await this.sociosApi.getAllSocios(req.user.club_asociado_id);
 			res.status(201).json({success: true, data: socios});
 		} catch (err) {
+			console.log(err.message);
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	

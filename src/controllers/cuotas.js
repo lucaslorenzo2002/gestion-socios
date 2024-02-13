@@ -10,9 +10,9 @@ class CuotasController{
 
 	programarCuota = asyncHandler(async(req, res) => {
 		try {
-			const {monto, to, fechaEmision} = req.body;
+			const {monto, to, fechaEmision, abonoMultiple, maxCantAbonoMult} = req.body;
 			const {club_asociado} = req.user;
-			const nuevaCuota = await this.cuotasApi.programarCuota(fechaEmision, monto, to, club_asociado);
+			const nuevaCuota = await this.cuotasApi.programarCuota(fechaEmision, monto, to, abonoMultiple, abonoMultiple ? maxCantAbonoMult : null, club_asociado);
 			res.status(201).json({success: true, data: nuevaCuota});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
@@ -31,6 +31,15 @@ class CuotasController{
 	getMisCuotasPagas = asyncHandler(async(req, res) => {
 		try {
 			const cuotas = await this.cuotasApi.getMisCuotasPagas(req.user.id);
+			res.status(201).json({success: true, data: cuotas});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
+	getLast3CuotasPagas = asyncHandler(async(req, res) => {
+		try {
+			const cuotas = await this.cuotasApi.getLast3CuotasPagas(req.user.id);
 			res.status(201).json({success: true, data: cuotas});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});

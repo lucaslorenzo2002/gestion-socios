@@ -5,12 +5,16 @@ class CateogriasSocioApi{
 		this.categoriasSocioDAO = new CategoriasSocioDAO();
 	}
 
-	async createCategoriaSocio(categoria, club){
-		return await this.categoriasSocioDAO.createCategoriaSocio({categoria, club});
+	async createCategoriaSocio(categoria, club, actividadId){
+		return await this.categoriasSocioDAO.createCategoriaSocio({categoria, club, actividad_id: actividadId});
 	}
 
-	async getCategoriasSocio(club){
-		return await this.categoriasSocioDAO.getCategoriasSocio(club);
+	async getCategoriasActividad(club, actividadId){
+		return await this.categoriasSocioDAO.getCategoriasActividad(club, actividadId);
+	}
+
+	async getAllCategorias(club){
+		return await this.categoriasSocioDAO.getAllCategorias(club);
 	}
 
 	async categoriasDeSocioConCuotasCreadas(club){

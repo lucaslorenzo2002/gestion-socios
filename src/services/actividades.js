@@ -10,13 +10,14 @@ class ActividadesApi{
 		return await this.actividadesDAO.crearActividad({actividad, club, id: Math.floor(Math.random() * 100000) + 1});
 	}
 
-	async createSocioActividad(socioId, actividades){
+	async createSocioActividad(socioId, actividades, categorias){
 		if(Array.isArray(actividades)){
 			for (let i = 0; i < actividades.length; i++) {
-				await this.actividadesDAO.crearSocioActividad({socio_id: socioId, actividad_id: parseInt(actividades[i])});
+				await this.actividadesDAO.crearSocioActividad({socio_id: socioId, actividad_id: parseInt(actividades[i]), categoria_socio_id: categorias});
 			} 
 		}else{
-			return await this.actividadesDAO.crearSocioActividad({socio_id: socioId, actividad_id: actividades});
+			console.log(socioId, actividades);
+			return await this.actividadesDAO.crearSocioActividad({socio_id: socioId, actividad_id: actividades, categoria_socio_id: categorias});
 		}
 	}
 
@@ -26,6 +27,10 @@ class ActividadesApi{
 
 	async getActividades(club){
 		return await this.actividadesDAO.getActividades(club);
+	}
+
+	async getSocioActividad(idSocio){
+		return await this.actividadesDAO.getSocioActividad(idSocio);
 	}
 
 	async eliminarActividad(id, club){

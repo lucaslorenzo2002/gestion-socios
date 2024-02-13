@@ -7,10 +7,12 @@ const formatDateString = require('../utils/formatDateString');
 const logger = require('../utils/logger');
 const CategoriasSocioDAO = require('./categoriasSocio');
 const TipoSocio = require('../models/tipoSocio');
+const SociosDAO = require('./socios');
 
 class CuotasDAO{
 	constructor(){
 		this.categoriasSocioDAO = new CategoriasSocioDAO();
+		this.sociosDAO = new SociosDAO();
 	}
 
 	async programarCuota(newCuotaProgramada){
@@ -42,17 +44,16 @@ class CuotasDAO{
 		}
 	}
 
-	async createSocioCuota(id, cuotaId, socioId){
+	async createSocioCuota(newSocioCuota){
 		try {
-			return await Socio_Cuota.create({id, cuota_id: cuotaId, socio_id: socioId});
+			return await Socio_Cuota.create(newSocioCuota);
 		} catch (err) {
 			logger.info(err);
 		}
 	}
 	
-	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto){
+	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto, mesesAbonados, clubAsociado){
 		try{
-			console.log(formaDePago, deuda, socioId, socioCuotaId, monto);
 			const socioCuota = await this.getSocioCuota(socioCuotaId);
 			if(socioCuota.dataValues.estado === 'PAGO'){
 				return 'cuota ya pagada';
@@ -68,13 +69,9 @@ class CuotasDAO{
 					}
 				});
 	
-				await Socio.update({
-					deuda: deuda - monto
-				}, {
-					where:{
-						id: socioId
-					}
-				});
+				await this.sociosDAO.updateSocioDeuda(deuda-monto, socioId, clubAsociado);
+				
+				await this.sociosDAO.updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId);
 			}
 		}catch(err){
 			logger.info(err);
@@ -113,16 +110,34 @@ class CuotasDAO{
 					estado: 'PENDIENTE'
 				}
 			});
-
+			
 			const misCuotasData = [];
 			for (let i = 0; i < misCuotasId.length; i++) {
-				const cuota = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id);
+				const cuota = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id, {
+					include:[{
+						model: TipoSocio,
+						attributes: ['tipo_socio'],
+						as: 'to'
+					}]
+				});
+				const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
+				const fecha = new Date(año, mes - 1, dia);
+				const cuotaProgramada = await CuotaProgramada.findOne({
+					attributes: ['abono_multiple', 'maxima_cantidad_abono_multiple'],
+					where:{
+						tipo_socio_id: cuota.dataValues.tipo_socio_id
+					}
+				});
 				misCuotasData.push({
-					id: misCuotasId[i].dataValues.id, 
+					id: misCuotasId[i].dataValues.id,
+					cuota: cuota.to.dataValues.tipo_socio,
 					estado: misCuotasId[i].dataValues.estado,
+					abono_multiple: cuotaProgramada.dataValues.abono_multiple,
+					max_cant_abono: cuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
 					monto: cuota.monto,
 					fecha_emision:formatDateString(cuota.fecha_emision),
 					fecha_vencimiento: formatDateString(cuota.fecha_vencimiento),
+					vencida: fecha > new Date()
 				});
 			}
 
@@ -132,20 +147,73 @@ class CuotasDAO{
 		}
 	} 
 
+	async getLast3CuotasPagas(socioId){
+		try{
+			const misCuotasId = await Socio_Cuota.findAll({
+				where:{
+					socio_id: socioId,
+					estado: 'PAGO'
+				},
+				order:[
+					['fecha_pago', 'DESC']
+				],
+				limit: 3
+			});
+
+			const misCuotasData = [];
+			for (let i = 0; i < misCuotasId.length; i++) {
+				const cuota = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id, {
+					include:[{
+						model: TipoSocio,
+						attributes: ['tipo_socio'],
+						as: 'to'
+					}]
+				});
+				misCuotasData.push({
+					id: misCuotasId[i].dataValues.id, 
+					cuota: cuota.to.dataValues.tipo_socio,
+					estado: misCuotasId[i].dataValues.estado,
+					monto: cuota.monto,
+					fecha_emision:formatDateString(cuota.fecha_emision),
+					banco: misCuotasId[i].dataValues.banco,
+					forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
+					fecha_de_pago: formatDateString(misCuotasId[i].dataValues.fecha_pago),
+				});
+				
+			}
+
+			return misCuotasData;
+		}catch(err){
+			logger.info(err);
+		}
+	} 
+
+	//OPTIMAZAR ESTAS QUERIES: VER COMO HACER LA ASOCIACION EN SOCIO_CUOTA
+
 	async getMisCuotasPagas(socioId){
 		try{
 			const misCuotasId = await Socio_Cuota.findAll({
 				where:{
 					socio_id: socioId,
 					estado: 'PAGO'
-				}
+				},
+				order:[
+					['fecha_pago', 'DESC']
+				],
 			});
 
 			const misCuotasData = [];
 			for (let i = 0; i < misCuotasId.length; i++) {
-				const cuota = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id);
+				const cuota = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id, {
+					include:[{
+						model: TipoSocio,
+						attributes: ['tipo_socio'],
+						as: 'to'
+					}]
+				});
 				misCuotasData.push({
 					id: misCuotasId[i].dataValues.id, 
+					cuota: cuota.to.dataValues.tipo_socio,
 					estado: misCuotasId[i].dataValues.estado,
 					monto: cuota.monto,
 					fecha_emision:formatDateString(cuota.fecha_emision),

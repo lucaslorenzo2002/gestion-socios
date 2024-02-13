@@ -1,5 +1,7 @@
 const Actividad = require('../models/actividad');
 const ActividadSocio = require('../models/actividad_socio');
+const CategoriaSocio = require('../models/categoriaSocio');
+const Socio = require('../models/socio');
 const logger = require('../utils/logger');
 
 class ActividadesDAO{
@@ -15,6 +17,28 @@ class ActividadesDAO{
 	async crearSocioActividad(socioActividad){
 		try {
 			return await ActividadSocio.create(socioActividad);
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async getSocioActividad(idSocio){
+		try {
+			return await ActividadSocio.findAll({
+				include:[{
+					model: Actividad,
+					attributes: ['actividad']
+				},{
+					model: Socio,
+					attributes: ['nombres', 'apellido']
+				},{
+					model: CategoriaSocio,
+					attributes: ['categoria']
+				}],
+				where:{
+					socio_id: idSocio
+				}
+			});
 		} catch (err) {
 			logger.info(err);
 		}

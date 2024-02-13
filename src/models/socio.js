@@ -7,6 +7,7 @@ const Club = require('./club');
 const Administrador = require('./administrador');
 const Cuota = require('./cuota');
 const CuotaProgramada = require('./cuotaProgramada');
+const Actividad = require('./actividad');
 
 const Socio = sequelize.define('Socio',{
 	id: {
@@ -37,10 +38,13 @@ const Socio = sequelize.define('Socio',{
 		type: DataTypes.INTEGER
 	},
 	foto_de_perfil: DataTypes.STRING,
-	//LO TIENE QUE DEFINIR EL ADMIN
 	estado_socio:{
 		type: DataTypes.STRING,
 		defaultValue: 'ACTIVO'
+	},
+	meses_abonados:{
+		type: DataTypes.INTEGER,
+		defaultValue: 0
 	},
 	tipo_doc:{
 		type: DataTypes.STRING
@@ -48,19 +52,12 @@ const Socio = sequelize.define('Socio',{
 	sexo:{
 		type: DataTypes.STRING
 	},
-	es_jugador:{
-		type: DataTypes.BOOLEAN,
-		defaultValue: false
-	},
-	telefono_fijo:{
-		type: DataTypes.STRING
-	},
 	telefono_celular:{
 		type: DataTypes.STRING
 	},
 	deuda:{
-		type: DataTypes.INTEGER,
-		defaultValue: 0
+		type: DataTypes.DOUBLE,
+		defaultValue: 0.00
 	},
 	codigo_postal:{
 		type: DataTypes.INTEGER
@@ -109,9 +106,6 @@ Token.belongsTo(Socio, {foreignKey: 'socio_id', sourceKey: 'id'});
 TipoSocio.hasMany(Socio, {foreignKey: 'tipo_socio_id', sourceKey: 'id'});
 Socio.belongsTo(TipoSocio, {foreignKey: 'tipo_socio_id', sourceKey: 'id', as: 'tipo_socio'});
 
-CategoriaSocio.hasMany(Socio, {foreignKey: 'categoria_socio_id', sourceKey: 'id'});
-Socio.belongsTo(CategoriaSocio, {foreignKey: 'categoria_socio_id', sourceKey: 'id', as: 'categoria'});
-
 Club.hasMany(Socio, {foreignKey: 'club_asociado_id', sourceKey: 'id'});
 Socio.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'club_asociado'});
 
@@ -123,6 +117,9 @@ Cuota.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'clu
 
 Club.hasMany(CuotaProgramada, {foreignKey: 'club_asociado_id', sourceKey: 'id'});
 CuotaProgramada.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id', as: 'club_asociado'});
+
+Actividad.hasMany(CategoriaSocio, {foreignKey: 'actividad_id', sourceKey: 'id'});
+CategoriaSocio.belongsTo(Actividad, {foreignKey: 'actividad_id', sourceKey: 'id', as: 'actividad'});
 
 
 module.exports = Socio;

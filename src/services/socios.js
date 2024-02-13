@@ -1,28 +1,31 @@
 const SociosDAO = require('../database/socios');
 const { uploadFile } = require('../utils/awsS3');
 const ActividadesApi = require('./actividades');
+const CategoriasSocioApi = require('./categoriasSocio');
 
 class SociosApi{
 	constructor(){
 		this.sociosDAO = new SociosDAO();
 		this.actividadesApi = new ActividadesApi();
+		this.categoriasSocioApi = new CategoriasSocioApi();
 	}
 
-	async createSocio(id, nombres, apellido, categoriaId, clubAsociado, fotoFile, fotoFileName, fotoUrl, tipoSocioId){
+	async createSocio(id, nombres, apellido, categoriasId, clubAsociado, fotoFile, fotoFileName, fotoUrl, tipoSocioId, actividades){
 
 		if(fotoFile && fotoFileName && fotoUrl){
 			await uploadFile(fotoFile, fotoFileName);
 		}
-		
-		return await this.sociosDAO.createSocio({
+
+		await this.sociosDAO.createSocio({
 			id, 
 			nombres, 
 			apellido, 
-			categoria_socio_id: categoriaId, 
 			club_asociado_id: clubAsociado, 
 			foto_de_perfil: fotoUrl,
 			tipo_socio_id: tipoSocioId
 		}); 
+
+		await this.actividadesApi.createSocioActividad(id, actividades, categoriasId);
 	}
 
 	async getSocioById(id){
@@ -45,6 +48,10 @@ class SociosApi{
 		return await this.sociosDAO.updateSocioDeuda(deuda, socioId, clubAsociado);
 	}
 
+	async updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId){
+		return await this.sociosDAO.updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId);
+	}
+
 	async darDeBaja(id){
 		return await this.sociosDAO.darDeBaja(id);
 	}
@@ -53,8 +60,27 @@ class SociosApi{
 		return await this.sociosDAO.darDeAlta(id);
 	}
 
-	async updateSocioData(fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, id){
-		return await this.sociosDAO.updateSocioData(fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, id);
+	async updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, id){
+		const bodyArray = [fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial];
+		let camposCompletados = 0;
+
+		for (const campo of bodyArray) {
+			if(campo !== null) {
+				camposCompletados++;
+			}
+		}
+
+		let porcentajeCamposCompletados;
+		if(poseeObraSocial){
+			porcentajeCamposCompletados = camposCompletados * 100 /19;
+		}else{
+			porcentajeCamposCompletados = (camposCompletados-4) * 100 /15;
+		}
+
+		if(porcentajeCamposCompletados > 100){
+			porcentajeCamposCompletados = 100;
+		}
+		return await this.sociosDAO.updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, Math.floor(42 + porcentajeCamposCompletados), id);
 	}
 
 	async actualizarCategoriaDeSocio(id, categoria, club){

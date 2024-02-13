@@ -8,16 +8,25 @@ class CategoriasSocioController{
 
 	createCategoriaSocio = asyncHandler(async(req, res) => {
 		try {
-			await this.categoriasSocioApi.createCategoriaSocio(req.body.categoria, req.user.club_asociado.nombre);
+			await this.categoriasSocioApi.createCategoriaSocio(req.body.categoria, req.user.club_asociado.nombre, req.body.actividadId);
 			res.status(201).json({success: true, message: 'nueva categoria creada'});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
 		}
 	});	  
 
-	getCategoriasSocio = asyncHandler(async(req, res) => {
+	getCategoriasActividad = asyncHandler(async(req, res) => {
 		try {
-			const categoriasSocio = await this.categoriasSocioApi.getCategoriasSocio(req.user.club_asociado.nombre);
+			const categoriasSocio = await this.categoriasSocioApi.getCategoriasActividad(req.user.club_asociado.nombre, req.body.actividadId);
+			res.status(201).json({success: true, data: categoriasSocio});
+		} catch (err) {
+			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		}
+	});	  
+
+	getAllCategorias = asyncHandler(async(req, res) => {
+		try {
+			const categoriasSocio = await this.categoriasSocioApi.getAllCategorias(req.user.club_asociado.nombre);
 			res.status(201).json({success: true, data: categoriasSocio});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});

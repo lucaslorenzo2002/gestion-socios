@@ -28,10 +28,10 @@ async function server (){
 		});
 	}else{ 
 
-		await sequelize.sync({alter: true}).then(() => {
+		await sequelize.sync({alter: false}).then(() => {
 			logger.info('All models were synchronized successfully.');
 		}).catch((err) => {
-			logger.info(err);
+			logger.info(err.message);
 		});
 
 		const PORT = process.env.PORT || 4000;

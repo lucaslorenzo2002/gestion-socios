@@ -8,7 +8,6 @@ class IncludeOptions{
 	getUserIncludeOptions(){
 		return[
 			this.getTipoSocioIncludeOptions(),
-			this.getCategoriaSocioIncludeOptions(),
 			this.getActvidadesSocioIncludeOptions(),
 			this.getClubAsociadoIncludeOptions()
 		];
@@ -28,18 +27,13 @@ class IncludeOptions{
 		};
 	}
 
-	getCategoriaSocioIncludeOptions(){
-		return {
-			model: CategoriaSocio,
-			attributes: ['categoria'],
-			as: 'categoria'
-		};
-	}
-
 	getActvidadesSocioIncludeOptions(){
 		return {
 			model: Actividad,
-			attributes: ['actividad']
+			attributes: ['actividad'],
+			include: [
+				this.getCategoriaSocioIncludeOptions()
+			]
 		};
 	}
 
@@ -47,6 +41,13 @@ class IncludeOptions{
 		return {
 			model: Club,
 			as: 'club_asociado'
+		};
+	}
+
+	getCategoriaSocioIncludeOptions(){
+		return {
+			model: CategoriaSocio,
+			attributes: ['categoria', 'id']
 		};
 	}
 }

@@ -39,7 +39,7 @@ class AdministradoresDAO{
 			return Administrador.findOne({
 				include: this.getAdminIncludeOptions.getAdminIncludeOptions(),
 				where: {
-					club_asociado: clubAsociado
+					club_asociado_id: clubAsociado
 				}
 			});
 		}catch(err){

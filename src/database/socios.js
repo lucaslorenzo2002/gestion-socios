@@ -20,12 +20,23 @@ class SociosDAO{
 		}
 	}
 
-	async getUserByMail(email){
+	async getSocioByEmail(email){
 		try{
-			return Socio.findOne({ 
-				include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+			return await Socio.findOne({ 
 				where: { 
 					email 
+				} 
+			});
+		}catch(err){
+			logger.info(err);
+		}
+	}
+
+	async getSocioByCelular(celular){
+		try{
+			return await Socio.findOne({ 
+				where: { 
+					telefono_celular: celular 
 				} 
 			});
 		}catch(err){
@@ -205,7 +216,8 @@ class SociosDAO{
 					password,
 					sexo,
 					tipo_doc: tipoDeDocumento,
-					telefono_celular: celular
+					telefono_celular: celular,
+					perfil_completado: 42
 				},
 				{
 					where: {
@@ -218,26 +230,24 @@ class SociosDAO{
 		}
 	}	
 
-	/*async updateSocioPassword(userId, newPassword){
+	async updateSocioPassword(socioId, newPassword){
 		try{
 			return Socio.update({password: newPassword},{
 				where:{
-					id: userId
+					id: socioId
 				}
 			}
 			);
 		}catch(err){
 			logger.info(err);
 		}
-	} */
+	} 
 
-	async updateSocioData(fecNacimiento, edad, sexo, esJugador, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, id){
+	async updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, perfilCompletado, id){
 		try{
 			return Socio.update({
 				fec_nacimiento: fecNacimiento,
 				edad,
-				sexo,
-				es_jugador: esJugador,
 				telefono_celular: telefonoCelular,
 				codigo_postal: codigoPostal,
 				direccion,
@@ -247,7 +257,8 @@ class SociosDAO{
 				siglas,
 				rnos,
 				numero_de_afiliados: numeroDeAfiliados,
-				denominacion_de_obra_social: denominacionDeObraSocial
+				denominacion_de_obra_social: denominacionDeObraSocial,
+				perfil_completado: perfilCompletado
 			}, {
 				where:{
 					id
@@ -260,7 +271,8 @@ class SociosDAO{
 
 	async updateSocioDeuda(deuda, socioId, clubAsociado){
 		try{
-			return Socio.update({deuda}, {
+
+			return Socio.update({deuda: deuda <= 0 ? 0 : deuda}, {
 				where: {
 					id: socioId,
 					club_asociado_id: clubAsociado
@@ -363,6 +375,19 @@ class SociosDAO{
 				where:{
 					tipo_socio_id: tipoSocio,
 					club_asociado_id: club
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId){
+		try {
+			return Socio.update({meses_abonados: mesesAbonados},{
+				where: {
+					id: socioId,
+					club_asociado_id: clubAsociado
 				}
 			});
 		} catch (err) {

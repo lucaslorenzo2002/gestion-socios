@@ -10,12 +10,13 @@ class PagosApi{
 		this.cuotasApi = new CuotasApi();
 	}
 
-	async crearOrdenDePago(socioId, socioCuotaId, socioDeuda){
+	async crearOrdenDePago(socioId, socioCuotaId, socioDeuda, cantCuotas){
+		
 		const socioCuota = await this.cuotasDAO.getSocioCuota(socioCuotaId);
 		const cuotaId = socioCuota.dataValues.cuota_id;
 		const cuota = await this.cuotasApi.getCuota(cuotaId);
 		const monto = cuota.dataValues.monto;
-		return await createOrder.createOrder(socioId, socioCuotaId, monto, socioDeuda);
+		return await createOrder.createOrder(socioId, socioCuotaId, monto, socioDeuda, cantCuotas);
 	}
 
 	async reciveWebhook(dataId){
