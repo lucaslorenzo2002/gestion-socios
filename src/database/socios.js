@@ -331,7 +331,20 @@ class SociosDAO{
 
 	async actualizarCategoriaDeSocio(id, categoria, club){
 		try {
-			return Socio.update({categoria_socio_id: categoria}, {
+			return Socio.update({categoria_id: categoria}, {
+				where:{
+					id,
+					club_asociado_id: club
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async actualizarActividadDeSocio(id, actividad, club){
+		try {
+			return Socio.update({actividad_id: actividad}, {
 				where:{
 					id,
 					club_asociado_id: club

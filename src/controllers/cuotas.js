@@ -66,9 +66,11 @@ class CuotasController{
 
 	pagarCuotaDesdeAdmin = asyncHandler(async(req, res) => {
 		try {
-			const{formaDePago, deuda, id} = req.body;
+			const{formaDePago, deuda, id, mesesAbonados} = req.body;
+			console.log(req.body);
 			const{sociocuotaid} = req.params;
-			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid);
+			const{club_asociado_id} = req.user;
+			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, mesesAbonados-1, club_asociado_id);
 			const socio = await this.sociosApi.getSocioById(id);
 			res.status(201).json({success: true, message: `la cuota de ${socio.dataValues.nombres} ${socio.dataValues.apellido} ha sido pagada con exito`});
 		} catch (err) {

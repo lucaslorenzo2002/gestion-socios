@@ -52,7 +52,7 @@ class CuotasDAO{
 		}
 	}
 	
-	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto, mesesAbonados, clubAsociado){
+	async pagarCuota(formaDePago, socioId, socioCuotaId, clubAsociado){
 		try{
 			const socioCuota = await this.getSocioCuota(socioCuotaId);
 			if(socioCuota.dataValues.estado === 'PAGO'){
@@ -68,10 +68,8 @@ class CuotasDAO{
 						estado: 'PENDIENTE'
 					}
 				});
-	
-				await this.sociosDAO.updateSocioDeuda(deuda-monto, socioId, clubAsociado);
 				
-				await this.sociosDAO.updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId);
+				//await this.sociosDAO.updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId);
 			}
 		}catch(err){
 			logger.info(err);
@@ -121,23 +119,25 @@ class CuotasDAO{
 					}]
 				});
 				const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
-				const fecha = new Date(año, mes - 1, dia);
+				const fechaVto = new Date(año, mes - 1, dia);
 				const cuotaProgramada = await CuotaProgramada.findOne({
 					attributes: ['abono_multiple', 'maxima_cantidad_abono_multiple'],
 					where:{
 						tipo_socio_id: cuota.dataValues.tipo_socio_id
 					}
 				});
+
 				misCuotasData.push({
 					id: misCuotasId[i].dataValues.id,
 					cuota: cuota.to.dataValues.tipo_socio,
-					estado: misCuotasId[i].dataValues.estado,
+					estado: fechaVto < new Date() ? 'VENCIDA' : 'PENDIENTE',
 					abono_multiple: cuotaProgramada.dataValues.abono_multiple,
 					max_cant_abono: cuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
 					monto: cuota.monto,
 					fecha_emision:formatDateString(cuota.fecha_emision),
-					fecha_vencimiento: formatDateString(cuota.fecha_vencimiento),
-					vencida: fecha > new Date()
+					fecha_vencimiento: cuota.fecha_vencimiento,
+					cantidad: 1,
+					vencida: fechaVto < new Date()
 				});
 			}
 
@@ -235,21 +235,34 @@ class CuotasDAO{
 			const cuotasSocio = await Socio_Cuota.findAll({
 				where:{
 					socio_id: socioId
-				}
+				},
+				order:[
+					['cuota_id', 'DESC']
+				],
 			});
 
 			const cuotasSocioData = [];
 			for (let i = 0; i < cuotasSocio.length; i++) {
 				const cuota = await Cuota.findByPk(cuotasSocio[i].dataValues.cuota_id);
+				const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
+				const fechaVto = new Date(año, mes - 1, dia);
+				const cuotaProgramada = await CuotaProgramada.findOne({
+					attributes: ['abono_multiple', 'maxima_cantidad_abono_multiple'],
+					where:{
+						tipo_socio_id: cuota.dataValues.tipo_socio_id
+					}
+				});
 				cuotasSocioData.push({
 					id: cuotasSocio[i].dataValues.id, 
 					estado: cuotasSocio[i].dataValues.estado,
 					monto: cuota.monto,
 					fecha_emision:formatDateString(cuota.fecha_emision),
-					fecha_vencimiento: formatDateString(cuota.fecha_vencimiento),
-					banco: cuotasSocio[i].dataValues.banco,
+					fecha_vencimiento: cuota.fecha_vencimiento,
 					forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
 					fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
+					abono_multiple: fechaVto > new Date() ? false : cuotaProgramada.dataValues.abono_multiple,
+					max_cant_abono: cuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
+					vencida: fechaVto > new Date()
 				});
 				
 			}

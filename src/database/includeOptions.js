@@ -8,8 +8,9 @@ class IncludeOptions{
 	getUserIncludeOptions(){
 		return[
 			this.getTipoSocioIncludeOptions(),
-			this.getActvidadesSocioIncludeOptions(),
-			this.getClubAsociadoIncludeOptions()
+			this.getClubAsociadoIncludeOptions(),
+			this.getActividadIncludeOptions(),
+			this.getCategoriaIncludeOptions()
 		];
 	}
 
@@ -27,29 +28,28 @@ class IncludeOptions{
 		};
 	}
 
-	getActvidadesSocioIncludeOptions(){
-		return {
-			model: Actividad,
-			attributes: ['actividad'],
-			include: [
-				this.getCategoriaSocioIncludeOptions()
-			]
-		};
-	}
-
 	getClubAsociadoIncludeOptions(){
 		return {
 			model: Club,
 			as: 'club_asociado'
 		};
 	}
-
-	getCategoriaSocioIncludeOptions(){
-		return {
+	
+	getCategoriaIncludeOptions(){
+		return{
 			model: CategoriaSocio,
-			attributes: ['categoria', 'id']
+			as:'cat'
 		};
 	}
+
+	getActividadIncludeOptions(){
+		return{
+			model: Actividad,
+			as: 'activ'
+		};
+	}
+
+
 }
 
 module.exports = IncludeOptions;

@@ -22,10 +22,11 @@ class SociosApi{
 			apellido, 
 			club_asociado_id: clubAsociado, 
 			foto_de_perfil: fotoUrl,
-			tipo_socio_id: tipoSocioId
+			tipo_socio_id: tipoSocioId,
+			actividad_id: actividades
 		}); 
 
-		await this.actividadesApi.createSocioActividad(id, actividades, categoriasId);
+		//await this.actividadesApi.createSocioActividad(id, actividades, categoriasId);(usar cuando cree multiples actividades para un socio)
 	}
 
 	async getSocioById(id){
@@ -69,7 +70,7 @@ class SociosApi{
 				camposCompletados++;
 			}
 		}
-
+		
 		let porcentajeCamposCompletados;
 		if(poseeObraSocial){
 			porcentajeCamposCompletados = camposCompletados * 100 /19;
@@ -77,10 +78,7 @@ class SociosApi{
 			porcentajeCamposCompletados = (camposCompletados-4) * 100 /15;
 		}
 
-		if(porcentajeCamposCompletados > 100){
-			porcentajeCamposCompletados = 100;
-		}
-		return await this.sociosDAO.updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, Math.floor(42 + porcentajeCamposCompletados), id);
+		return await this.sociosDAO.updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, Math.floor(42 + porcentajeCamposCompletados) > 100 ? 100 : Math.floor(42 + porcentajeCamposCompletados), id);
 	}
 
 	async actualizarCategoriaDeSocio(id, categoria, club){
@@ -91,10 +89,8 @@ class SociosApi{
 		return await this.sociosDAO.actualizarTipoDeSocio(id, tipoSocio, club);
 	}
 
-	async actualizarActividadesSocio(socioId, actividadId){
-		await this.actividadesApi.eliminarSocioActividad(socioId);
-		console.log('serv' + actividadId);
-		return await this.actividadesApi.createSocioActividad(socioId, actividadId);
+	async actualizarActividadesSocio(socioId, actividadId, club){
+		return await this.sociosDAO.actualizarActividadDeSocio(socioId, actividadId, club);
 	}
 
 	async filterSocios(tipoSocio, categoria, actividades, club){

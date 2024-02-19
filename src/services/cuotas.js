@@ -120,13 +120,19 @@ class CuotasApi{
 		return await this.cuotasDAO.getAllCuotasSocio(socioId);
 	}
 
-	async pagarCuota(formaDePago, deuda, socioId, socioCuotaId, mesesAbonados, clubAsociado){
-		const socioCuota = await this.cuotasDAO.getSocioCuota(socioCuotaId);
-		const cuotaId = socioCuota.dataValues.cuota_id;
-		const cuota = await this.getCuota(cuotaId);
-		const monto = cuota.dataValues.monto;
-		let socioIdString = socioId.toString().slice(-3);
-		for (let i = 1; i < mesesAbonados; i++) {
+	async pagarCuota(formaDePago, deuda, socioId, socioCuotas, clubAsociado){
+		for (const c of socioCuotas) {
+			let socioCuota = await this.cuotasDAO.getSocioCuota(parseInt(c.id));
+			const cuotaId = socioCuota.dataValues.cuota_id;
+			const cuota = await this.getCuota(cuotaId);
+			const monto = cuota.dataValues.monto;
+			await this.sociosApi.updateSocioDeuda(deuda-monto, socioId, clubAsociado);
+			await this.cuotasDAO.pagarCuota(formaDePago, deuda, socioId, parseInt(c.id), monto, clubAsociado);
+		}
+
+		//ver como hacer para pagar multiples meses la actividad o cuota social
+		//let socioIdString = socioId.toString().slice(-3);
+		/* for (let i = 1; i < mesesAbonados; i++) {
 			await this.cuotasDAO.createSocioCuota({
 				id: parseInt(`${cuotaId}${i}${socioIdString}`), 
 				forma_de_pago: formaDePago,
@@ -135,9 +141,8 @@ class CuotasApi{
 				socio_id:socioId,
 				cuota_id: cuotaId
 			});
-		}
-		return await this.cuotasDAO.pagarCuota(formaDePago, deuda, socioId, socioCuotaId, monto, mesesAbonados, clubAsociado);
-	}
+		} 
+	 */}
 
 	async getSocioCuota(id){
 		return await this.cuotasDAO.getSocioCuota(id);

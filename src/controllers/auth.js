@@ -58,10 +58,10 @@ class AuthController{
 		try {
 			const administrador = await this.administradoresApi.logInAdministrador(req.body.codigoAdministrador);
 			const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
-			res.cookie('token', token, { 
+			res.cookie('token', token/* , { 
 				sameSite: 'None', 
 				secure: true 
-			});
+			} */);
 			return res.status(201).json({administrador});
 		} catch (err) {
 			return res.status(401).json({ success: false, message: 'error al iniciar sesion: ' + err.message});

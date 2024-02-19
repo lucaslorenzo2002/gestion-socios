@@ -8,7 +8,7 @@ class PagosRouter{
 	}
 
 	start(){
-		pagosRouter.post('/crearorden/:sociocuotaid', auth, this.controller.crearOrden);
+		pagosRouter.post('/crearorden', auth, this.controller.crearOrden);
 		pagosRouter.post('/webhook', this.controller.reciveWebhook);
 		pagosRouter.get('/success', (req, res) => res.json({message: 'pago realizado'}));
 		pagosRouter.get('/failure', (req, res) => res.json({message: 'error en el pago'}));

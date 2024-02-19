@@ -1,4 +1,4 @@
-const { DataTypes } = require('sequelize');
+/* const { DataTypes } = require('sequelize');
 const sequelize = require('../config/sequelizeConfig');
 const Socio = require('./socio');
 const Actividad = require('./actividad');
@@ -25,3 +25,4 @@ Actividad_Socio.belongsTo(CategoriaSocio, {foreignKey: 'categoria_socio_id', sou
 
 module.exports = Actividad_Socio;
 
+ */

@@ -84,7 +84,7 @@ const Socio = sequelize.define('Socio',{
 		type: DataTypes.INTEGER
 	},
 	denominacion_de_obra_social:{
-		type: DataTypes.INTEGER
+		type: DataTypes.STRING
 	},
 	validado: {
 		type: DataTypes.BOOLEAN,
@@ -121,5 +121,10 @@ CuotaProgramada.belongsTo(Club, {foreignKey: 'club_asociado_id', sourceKey: 'id'
 Actividad.hasMany(CategoriaSocio, {foreignKey: 'actividad_id', sourceKey: 'id'});
 CategoriaSocio.belongsTo(Actividad, {foreignKey: 'actividad_id', sourceKey: 'id', as: 'actividad'});
 
+Actividad.hasMany(Socio, {foreignKey: 'actividad_id', sourceKey: 'id'});
+Socio.belongsTo(Actividad, {foreignKey: 'actividad_id', sourceKey: 'id', as:'activ'});
+
+CategoriaSocio.hasMany(Socio, {foreignKey: 'categoria_id', sourceKey: 'id'});
+Socio.belongsTo(CategoriaSocio, {foreignKey: 'categoria_id', sourceKey: 'id', as: 'cat'});
 
 module.exports = Socio;

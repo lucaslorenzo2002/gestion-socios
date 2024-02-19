@@ -82,7 +82,6 @@ class SociosController{
 	updateSocioData = asyncHandler(async(req, res) => {
 		try {
 			const{fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial} = req.body;
-			console.log(req.body);
 			await this.sociosApi.updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, req.user.id);
 			res.status(201).json({success: true, message: 'datos sincronizados con el club'});
 		} catch (err) {
@@ -130,7 +129,7 @@ class SociosController{
 
 	actualizarActividadesSocio = asyncHandler(async(req, res) => {
 		try {
-			await this.sociosApi.actualizarActividadesSocio(req.body.id, req.body.actividades);
+			await this.sociosApi.actualizarActividadesSocio(req.body.id, parseInt(req.body.actividades), req.user.club_asociado_id);
 			res.status(201).json({success: true, message: 'las actividades del socio han sido actualizadas'});
 		} catch (err) {
 			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
