@@ -76,25 +76,13 @@ class SociosDAO{
 					}
 				});
 			}else if(!tipoSocio && !categoria && actividades){
-				const idSocio = await Actividad_Socio.findAll({
-					where:{
-						actividad_id: parseInt(actividades)
-					},
-					attributes: ['socio_id']
+				return await Socio.findAll({
+					include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+					where: { 
+						actividad_id: actividades,
+						club_asociado_id: club 
+					}
 				});
-
-				const sociosFiltrados = [];
-				for (let i = 0; i < idSocio.length; i++) {
-					let socio = await Socio.findOne({
-						include: this.getSocioIncludeOptions.getUserIncludeOptions(),
-						where: {
-							id: idSocio[i].dataValues.socio_id,
-							club_asociado_id: club 
-						}
-					});
-					sociosFiltrados.push(socio.dataValues);
-				}
-				return sociosFiltrados;
 			}else if(tipoSocio && categoria && !actividades){
 				return await Socio.findAll({ 
 					include: this.getSocioIncludeOptions.getUserIncludeOptions(),
@@ -105,31 +93,16 @@ class SociosDAO{
 					}
 				});
 			}else if(tipoSocio && !categoria && actividades){
-				const idSocio = await Actividad_Socio.findAll({
-					where:{
-						actividad_id: parseInt(actividades)
-					},
-					attributes: ['socio_id']
-				});
-
-				const sociosFiltrados = [];
-
-				for (let i = 0; i < idSocio.length; i++) {
-					let socio = await Socio.findOne({
-						include: this.getSocioIncludeOptions.getUserIncludeOptions(),
-						where: {
-							id: idSocio[i].dataValues.socio_id,
-							tipo_socio_id: tipoSocio,
-							club_asociado_id: club
-						}
-					});
-					if(socio){
-						sociosFiltrados.push(socio.dataValues);
+				return await Socio.findAll({
+					include: this.getSocioIncludeOptions.getUserIncludeOptions(),
+					where: { 
+						tipo_socio_id: tipoSocio,
+						actividad_id: actividades,
+						club_asociado_id: club 
 					}
-				}
-				return sociosFiltrados;
+				});
 			}else if(!tipoSocio && categoria && actividades){
-				const idSocio = await Actividad_Socio.findAll({
+				const idSocio = await Socio.findAll({
 					where:{
 						actividad_id: parseInt(actividades)
 					},

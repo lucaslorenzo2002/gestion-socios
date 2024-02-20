@@ -10,7 +10,7 @@ class SociosApi{
 		this.categoriasSocioApi = new CategoriasSocioApi();
 	}
 
-	async createSocio(id, nombres, apellido, categoriasId, clubAsociado, fotoFile, fotoFileName, fotoUrl, tipoSocioId, actividades){
+	async createSocio(id, nombres, apellido, categoriasId, clubAsociado, fotoFile, fotoFileName, fotoUrl, tipoSocioId, actividades, socioDesde){
 
 		if(fotoFile && fotoFileName && fotoUrl){
 			await uploadFile(fotoFile, fotoFileName);
@@ -23,7 +23,8 @@ class SociosApi{
 			club_asociado_id: clubAsociado, 
 			foto_de_perfil: fotoUrl,
 			tipo_socio_id: tipoSocioId,
-			actividad_id: actividades
+			actividad_id: actividades,
+			socio_desde: socioDesde
 		}); 
 
 		//await this.actividadesApi.createSocioActividad(id, actividades, categoriasId);(usar cuando cree multiples actividades para un socio)

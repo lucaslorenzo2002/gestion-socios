@@ -9,9 +9,10 @@ require('dotenv').config();
 	dialect:  'postgres',
 	//port: process.env.POSTGRESQL_PORT,
 	logging: false
-});   */ 
+});  */  
 
 //PRODUCTION CONFIG
+
 const sequelize = new Sequelize(process.env.PRODUCTION_DB_CONNECTION_STRING, {
 	dialectModule: pg,
 	dialect:  'postgres',
@@ -24,5 +25,4 @@ const sequelize = new Sequelize(process.env.PRODUCTION_DB_CONNECTION_STRING, {
 		},
 	},
 });
-
 module.exports = sequelize;

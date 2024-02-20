@@ -37,9 +37,11 @@ class AuthController{
 		passport.authenticate('login', (err, user, info) => {
 			if (err) {
 				console.log(err);
+				console.log(err.message);
 				return next(err);
 			}
 			if (!user) {
+				console.log(info.message);
 				return res.status(401).json({ message: info.message });
 			}
 			req.login(user,

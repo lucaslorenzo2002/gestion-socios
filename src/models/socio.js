@@ -49,6 +49,9 @@ const Socio = sequelize.define('Socio',{
 	tipo_doc:{
 		type: DataTypes.STRING
 	},
+	socio_desde:{
+		type: DataTypes.DATE
+	},
 	sexo:{
 		type: DataTypes.STRING
 	},

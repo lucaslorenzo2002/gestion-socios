@@ -10,7 +10,7 @@ class SociosController{
 
 	createSocio = asyncHandler(async(req, res) => {
 		try {
-			const { nombres, apellido, id, categoria, tipoSocio, actividades } = req.body;
+			const { nombres, apellido, id, categoria, tipoSocio, actividades, socioDesde } = req.body;
 			const fileTempFilePath = req.files?.fotoDePerfil?.tempFilePath || null;
 			const fileName = req.files?.fotoDePerfil.name || null;
 			const fileUrl = req.files ? `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${fileName}` : null;
@@ -26,6 +26,7 @@ class SociosController{
 				fileUrl,
 				parseInt(tipoSocio),
 				parseInt(actividades),
+				socioDesde
 			);
 
 			res.status(200).json({success: true, message: 'nuevo socio registrado'});
