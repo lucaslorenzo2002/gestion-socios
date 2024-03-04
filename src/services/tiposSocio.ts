@@ -10,7 +10,7 @@ export class TiposSocioApi{
 	}
 
 	async createTipoSocio(tipoSocio: number, club: number){
-		return await this.tiposSocioDAO.createTipoSocio({tipo_socio: tipoSocio, club});
+		return await this.tiposSocioDAO.createTipoSocio({tipo_socio: tipoSocio, club_asociado_id: club});
 	}
 
 	async getTiposSocio(club: number){

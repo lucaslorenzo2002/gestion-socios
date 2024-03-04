@@ -93,7 +93,7 @@ export class CuotasApi{
 
 					if(fechaEmisionMoment.isSameOrBefore(moment())){
 						const cuotaProgramada = await this.cuotasDAO.programarCuota({tipo_de_cuota: tipoDeCuota, monto, actividad_id: actividadId, categoria_id: categoriaId, abono_multiple: abonoMultiple, maxima_cantidad_abono_multiple: maxCantAbonoMult, club_asociado_id: club.id});
-						const cuota = await this.cuotasDAO.createCuota({monto, cuota_programada_id: cuotaProgramada.dataValues.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento});  
+						const cuota = await this.cuotasDAO.createCuota({monto, cuota_programada_id: cuotaProgramada.dataValues.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento, club_asociado_id: club.id});  
 						await this.asignarCuotaASocios(cuota, club);
 						await this.cronJobCuota(monto, cuotaProgramada.dataValues.id, fechaEmision, fechaVencimiento);
 						return cuota.dataValues.id;
@@ -111,7 +111,7 @@ export class CuotasApi{
 
 				if(fechaEmisionMoment.isSameOrBefore(moment())){
 					const cuotaProgramada = await this.cuotasDAO.programarCuota({tipo_de_cuota: tipoDeCuota, monto, tipo_socio_id: to, actividad_id: actividadId, categoria_id: categoriasId[0] || null, abono_multiple: abonoMultiple, maxima_cantidad_abono_multiple: maxCantAbonoMult, club_asociado_id: club.id});
-					const cuota = await this.cuotasDAO.createCuota({monto, cuota_programada_id: cuotaProgramada.dataValues.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento});  
+					const cuota = await this.cuotasDAO.createCuota({monto, cuota_programada_id: cuotaProgramada.dataValues.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento, club_asociado_id: club.id});  
 					await this.asignarCuotaASocios(cuota, club);
 					await this.cronJobCuota(monto, cuotaProgramada.dataValues.id, fechaEmision, fechaVencimiento);
 					return cuota.dataValues.id;
