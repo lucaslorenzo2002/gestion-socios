@@ -1,0 +1,32 @@
+import {CuotasController} from '../controllers/cuotas.js';
+import cuotasRouter from './router.js';
+import adminAuth from '../middlewares/adminAuth.js';
+import auth from '../middlewares/auth.js';
+
+export class CuotasRouter{
+	controller: CuotasController;
+	constructor(){
+		this.controller = new CuotasController();
+	}
+
+	start(){
+		cuotasRouter.get('/cuota/:cuotaid', adminAuth, this.controller.getSocioCuota);
+		cuotasRouter.post('/crearcuota', adminAuth, this.controller.programarCuota);
+		cuotasRouter.get('/totalcuotaspendientes/:socioid', adminAuth, this.controller.totalCuotasPendientes);
+		cuotasRouter.get('/miscuotaspendientes', auth, this.controller.getMisCuotasPendientes);
+		cuotasRouter.get('/miscuotaspagas', auth, this.controller.getMisCuotasPagas);
+		cuotasRouter.get('/ultimas3cuotaspagas', auth, this.controller.getLast3CuotasPagas);
+		cuotasRouter.get('/ultimas3cuotaspagasdesdeadmin/:socioid', adminAuth, this.controller.getLast3CuotasPagasAdmin);
+		cuotasRouter.get('/cuotassocio/:id', adminAuth, this.controller.getCuotasSocio);
+		cuotasRouter.get('/cuotas', adminAuth, this.controller.getAllCuotas);
+		cuotasRouter.get('/cuotasprogramadas', adminAuth, this.controller.getCuotasProgramadas);
+		cuotasRouter.post('/actualizarvalordecuota', adminAuth, this.controller.actualizarValorDeCuota);
+		cuotasRouter.post('/eliminarcuotaprogramada', adminAuth, this.controller.eliminarCuotaProgramada);
+		cuotasRouter.post('/pagarcuota/:sociocuotaid', adminAuth, this.controller.pagarCuotaDesdeAdmin);
+		cuotasRouter.get('/success', (req, res) => res.send('success'));
+		cuotasRouter.get('/pending', (req, res) => res.send('pending'));
+		cuotasRouter.get('/failure', (req, res) => res.send('failure'));
+
+		return cuotasRouter;
+	}
+}

@@ -1,4 +1,4 @@
-/* import { pino } from 'pino';
+import { pino } from 'pino';
 
 function buildDefaultLogger() {
 	const defaultLogger = pino();
@@ -18,4 +18,4 @@ if (process.env.NODE_ENV == 'prod') {
   logger = buildProdLogger();
 }
 
-export default logger; */
+export default logger;
