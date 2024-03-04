@@ -33,7 +33,7 @@ app.use(fileUpload({
 }));
 app.use(cookieParser());
 app.use(cors({
-	origin: ['https://65e5fe90a4630a09f5c23b6b--imaginative-taiyaki-95c954.netlify.app', 'http://localhost:5173'],
+	origin: ['https://65e62fdf310f2b3864874562--exquisite-duckanoo-ee6883.netlify.app', 'http://localhost:5173'],
 	methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 	allowedHeaders: ['Access-Control-Allow-Origin', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
 	credentials: true
