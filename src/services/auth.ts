@@ -17,7 +17,7 @@ export class AuthApi{
 
         await this.TokenDAO.createToken(socioNroDocumento, verificateEmailToken);
 
-		let resetUrl = `http://localhost:4000/api/confirmaremail/${verificateEmailToken}`;
+		let resetUrl = `https://lao-software-backend.onrender.com/api/confirmaremail/${verificateEmailToken}`;
 
 		let message = `
         <h2>BIENVENIDO!</h2>
@@ -101,7 +101,7 @@ export class AuthApi{
 		
         await this.TokenDAO.createToken(socio.dataValues.id, resetToken);
 
-		let resetUrl = `http://localhost:4000/api/resetpassword/${resetToken}`;
+		let resetUrl = `https://lao-software-backend.onrender.com/api/resetpassword/${resetToken}`;
 
 		let message = `
         <h2>PORFAVOR NO RESPONDER ESTE MENSAJE</h2>
