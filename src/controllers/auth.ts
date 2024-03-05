@@ -54,7 +54,10 @@ export class AuthController{
 				async (error) => {
 					if (error) return next(error.message);            
 					const token = jwt.sign({ id: user.id}, 'adsfdcsfeds3w423ewdas');
-					res.cookie('token', token);
+					res.cookie('token', token , { 
+						sameSite: 'None', 
+						secure: true 
+					});
 					const socio = await this.sociosApi.getSocioById(user.id);
 					return res.status(201).json({ success: true, message: 'sesion iniciada', socio});
 				});
