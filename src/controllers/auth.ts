@@ -55,7 +55,7 @@ export class AuthController{
 					if (error) return next(error.message);            
 					const token = jwt.sign({ id: user.id}, 'adsfdcsfeds3w423ewdas');
 					res.cookie('token', token , { 
-						sameSite: 'None', 
+						sameSite: 'none', 
 						secure: true 
 					});
 					const socio = await this.sociosApi.getSocioById(user.id);
@@ -69,7 +69,7 @@ export class AuthController{
 			const administrador = await this.administradoresApi.logInAdministrador(req.body.codigoAdministrador);
 			const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
 			res.cookie('token', token , { 
-				sameSite: 'None', 
+				sameSite: 'none', 
 				secure: true 
 			});
 			return res.status(201).json({administrador});
