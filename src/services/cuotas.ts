@@ -30,7 +30,7 @@ export class CuotasApi{
 				sociosTarget = await this.sociosApi.filterSociosCuotaByTipoSocio(cuotaProgramada.tipo_socio_id, club.id);
 			}else{
 				const socios:any = await this.sociosApi.filterSociosCuotaByActividad(cuotaProgramada.actividad_id, cuotaProgramada.categoria_id, club.id);
-				sociosTarget = socios?.get('Socio')?.get();
+				sociosTarget = socios.map((socio) => socio.dataValues.Socio)
 			}
 
 			//Mail
@@ -44,6 +44,7 @@ export class CuotasApi{
 			let from = process.env.EMAIL_USER;
 			let subject = `${club.nombre}, AVISO DE NUEVA CUOTA`;
 
+			//no enviar cuota a los que tienen meses abonados
 			for (let i = 0; i < sociosTarget.length; i++) {		
 				if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO'){
 					console.log(sociosTarget[i])
@@ -82,26 +83,26 @@ export class CuotasApi{
 			}else{
 				anio = 2024;
 				fechaVencimiento = `10-${mesCuotaNum+1}-${anio}`;
-			}
-	
+			}	
 			const fechaEmisionMoment = moment(fechaEmision, 'DD-MM-YYYY');
 
 			if(actividadId !== 1 && categoriasId.length > 1){
+				let cuota;
 				for (const categoriaId of categoriasId) {
 					const cuotaYaExistente = await this.cuotasDAO.findCuotaProgrmada(null, actividadId, categoriaId, club.id);
 					if(cuotaYaExistente) throw new Error('La cuota que intenta crear ya esta programada');
 
 					if(fechaEmisionMoment.isSameOrBefore(moment())){
 						const cuotaProgramada = await this.cuotasDAO.programarCuota({tipo_de_cuota: tipoDeCuota, monto, actividad_id: actividadId, categoria_id: categoriaId, abono_multiple: abonoMultiple, maxima_cantidad_abono_multiple: maxCantAbonoMult, club_asociado_id: club.id});
-						const cuota = await this.cuotasDAO.createCuota({monto, cuota_programada_id: cuotaProgramada.dataValues.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento, club_asociado_id: club.id});  
+						cuota = await this.cuotasDAO.createCuota({monto, cuota_programada_id: cuotaProgramada.dataValues.id, fecha_emision: fechaEmision, fecha_vencimiento: fechaVencimiento, club_asociado_id: club.id});  
 						await this.asignarCuotaASocios(cuota, club);
 						await this.cronJobCuota(monto, cuotaProgramada.dataValues.id, fechaEmision, fechaVencimiento);
-						return cuota.dataValues.id;
 					}else{
 						const cuotaProgramada = await this.cuotasDAO.programarCuota({tipo_de_cuota: tipoDeCuota, monto, actividad_id: actividadId, categoria_id: categoriaId, abono_multiple: abonoMultiple, maxima_cantidad_abono_multiple: maxCantAbonoMult, club_asociado_id: club.id});
 						await this.cronJobCuota(monto, cuotaProgramada.dataValues.id, fechaEmision, fechaVencimiento);
 					}
 				}
+				return cuota.dataValues.id;
 			}else{
 				const cuotaYaExistente = await this.cuotasDAO.findCuotaProgrmada(to, actividadId, categoriasId[0] || null, club.id);
 				if(cuotaYaExistente) throw new Error('La cuota que intenta crear ya esta programada');
@@ -184,14 +185,27 @@ export class CuotasApi{
 	}
 
 	//mandar al servicio de pagos
-	async pagarCuota(formaDePago, deuda: number, socioId: number, socioCuotaId, clubAsociado: number){
+	async pagarCuota(
+		formaDePago: string, 
+		deuda: number, 
+		socioId: number, 
+		socioCuotaId, 
+		clubAsociado: number,
+		/* tipoDeCuota: string,
+		mesesAbonados: number */
+		){
 		
 		let socioCuota = await this.cuotasDAO.getSocioCuota(socioCuotaId);
 		const cuotaId = socioCuota.dataValues.cuota_id;
 		const cuota = await this.getCuota(cuotaId);
 		const monto = cuota.dataValues.monto;
 		await this.sociosApi.updateSocioDeuda(deuda-monto, socioId, clubAsociado);
-		await this.cuotasDAO.pagarCuota(formaDePago, socioId, socioCuotaId, clubAsociado);
+		await this.cuotasDAO.pagarCuota(formaDePago, socioId, socioCuotaId, clubAsociado);	
+
+		/* for (let i = 0; i < mesesAbonados; i++) {
+			
+		} */
+		
 		
 
 		//ver como hacer para pagar multiples meses la actividad o cuota social

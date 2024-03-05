@@ -11,7 +11,7 @@ export class AuthApi {
     async verificateEmail(socioEmail, socioNroDocumento) {
         let verificateEmailToken = crypto.randomBytes(32).toString('hex');
         await this.TokenDAO.createToken(socioNroDocumento, verificateEmailToken);
-        let resetUrl = `http://localhost:4000/api/confirmaremail/${verificateEmailToken}`;
+        let resetUrl = `https://lao-software-backend.onrender.com/api/confirmaremail/${verificateEmailToken}`;
         let message = `
         <h2>BIENVENIDO!</h2>
         <p>hace en click en la url proporcionada para confirmar tu cuenta de email</p>
@@ -65,7 +65,7 @@ export class AuthApi {
         let resetToken = crypto.randomBytes(32).toString('hex');
         console.log(resetToken);
         await this.TokenDAO.createToken(socio.dataValues.id, resetToken);
-        let resetUrl = `http://localhost:4000/api/resetpassword/${resetToken}`;
+        let resetUrl = `https://lao-software-backend.onrender.com/api/resetpassword/${resetToken}`;
         let message = `
         <h2>PORFAVOR NO RESPONDER ESTE MENSAJE</h2>
         <h3>Estimado Socio:</h3>

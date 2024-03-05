@@ -103,7 +103,6 @@ export class CuotasDAO {
                         estado: 'PENDIENTE'
                     }
                 });
-                //await this.sociosDAO.updateSocioMesesAbonados(mesesAbonados, clubAsociado, socioId);
             }
         }
         catch (err) {
@@ -218,7 +217,7 @@ export class CuotasDAO {
                 misCuotasData.push({
                     id: misCuotasId[i].dataValues.id,
                     estado: 'PAGO',
-                    tipo_de_cuota: cuota.CuotaProgramada.dataValues.tipo_de_cuota,
+                    tipo_de_cuota: cuota.CuotaProgramada?.dataValues.tipo_de_cuota,
                     monto: cuota.monto,
                     fecha_emision: formatDateString(cuota.fecha_emision),
                     forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
@@ -341,16 +340,16 @@ export class CuotasDAO {
                     id: cuotasSocio[i].dataValues.id,
                     estado: cuotasSocio[i].dataValues.estado,
                     monto: cuota.monto,
-                    tipo_de_cuota: cuota.CuotaProgramada.dataValues.tipo_de_cuota,
-                    tipo_de_socio: cuota.CuotaProgramada.to?.dataValues.tipo_socio,
-                    actividad: cuota.CuotaProgramada.Actividad?.dataValues.actividad,
-                    categoria: cuota.CuotaProgramada.CategoriaSocio?.dataValues.categoria,
+                    tipo_de_cuota: cuota.CuotaProgramada?.dataValues.tipo_de_cuota,
+                    tipo_de_socio: cuota.CuotaProgramada?.to?.dataValues.tipo_socio,
+                    actividad: cuota.CuotaProgramada?.Actividad?.dataValues.actividad,
+                    categoria: cuota.CuotaProgramada?.CategoriaSocio?.dataValues.categoria,
                     fecha_emision: formatDateString(cuota.fecha_emision),
                     fecha_vencimiento: cuota.fecha_vencimiento,
                     forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
                     fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
-                    abono_multiple: fechaVto > new Date() ? false : cuota.CuotaProgramada.dataValues.abono_multiple,
-                    max_cant_abono: cuota.CuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
+                    abono_multiple: fechaVto > new Date() ? false : cuota.CuotaProgramada?.dataValues.abono_multiple,
+                    max_cant_abono: cuota.CuotaProgramada?.dataValues.maxima_cantidad_abono_multiple,
                     vencida: fechaVto > new Date()
                 });
             }

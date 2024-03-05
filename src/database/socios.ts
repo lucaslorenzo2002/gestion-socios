@@ -446,7 +446,7 @@ export class SociosDAO{
 					}],
 					where:{
 						actividad_id: actividadId,
-						categoria_id: categoriaId,
+						categoria_socio_id: categoriaId,
 						club_asociado_id: club
 					}
 				})
@@ -470,14 +470,23 @@ export class SociosDAO{
 		}
 	}
 
-	async updateSocioMesesAbonados(mesesAbonados: number, clubAsociado: number, socioId: number){
+	async updateSocioMesesAbonados(tipoDeCuota: string, mesesAbonados: number, clubAsociado: number, socioId: number){
 		try {
-			return Socio.update({meses_abonados: mesesAbonados},{
-				where: {
-					id: socioId,
-					club_asociado_id: clubAsociado
-				}
-			});
+			if(tipoDeCuota === 'cuota social'){
+				return Socio.update({meses_abonados_cuota_social: mesesAbonados},{
+					where: {
+						id: socioId,
+						club_asociado_id: clubAsociado
+					}
+				});
+			}else{
+				return Socio.update({meses_abonados_cuota_deporte: mesesAbonados},{
+					where: {
+						id: socioId,
+						club_asociado_id: clubAsociado
+					}
+				});
+			}
 		} catch (err) {
 			logger.info(err);
 		}

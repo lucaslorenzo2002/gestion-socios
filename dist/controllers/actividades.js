@@ -100,7 +100,6 @@ export class ActividadesController {
             try {
                 if (req.params) {
                     const actividades = await this.actividadesApi.getSocioActividad(req.params.socioid);
-                    console.log(actividades);
                     res.status(201).json({ success: true, data: actividades });
                 }
                 else {

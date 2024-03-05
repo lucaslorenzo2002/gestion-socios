@@ -6,7 +6,7 @@ export class TiposSocioApi {
         this.sociosApi = new SociosApi();
     }
     async createTipoSocio(tipoSocio, club) {
-        return await this.tiposSocioDAO.createTipoSocio({ tipo_socio: tipoSocio, club });
+        return await this.tiposSocioDAO.createTipoSocio({ tipo_socio: tipoSocio, club_asociado_id: club });
     }
     async getTiposSocio(club) {
         const tiposSocioConCantidad = [];
