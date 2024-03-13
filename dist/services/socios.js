@@ -77,5 +77,14 @@ export class SociosApi {
     async filterSociosCuotaByTipoSocio(tipoSocio, club) {
         return await this.sociosDAO.filterSociosCuotaByTipoSocio(tipoSocio, club);
     }
+    async updateSocioMesesAbonadosCuotaSocial(mesesAbonados, clubAsociado, socioId) {
+        return await this.sociosDAO.updateSocioMesesAbonadosCuotaSocial(mesesAbonados, clubAsociado, socioId);
+    }
+    async getAllSociosWithEmail(clubAsociado) {
+        return await this.sociosDAO.getAllSociosWithEmail(clubAsociado);
+    }
+    async getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado) {
+        return await this.sociosDAO.getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado);
+    }
 }
 //# sourceMappingURL=socios.js.map

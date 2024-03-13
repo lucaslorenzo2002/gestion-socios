@@ -67,13 +67,30 @@ export class CuotasDAO{
 		}
 	}
 
+	async findCuotaProgramadaById(id){
+		try {
+			return await CuotaProgramada.findOne({
+				include:[
+					{
+						model: Club,
+						as: 'club_asociado'
+					}
+				],
+				where:{
+					id
+				}
+			})
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
 	async findCuotaById(id){
 		try {
 			return await Cuota.findOne({
 				include:[
 					{
 						model: CuotaProgramada,
-						attributes: ['tipo_socio_id', 'actividad_id', 'categoria_id'],
 						include: [
 							{
 								model: Club,
@@ -162,12 +179,20 @@ export class CuotasDAO{
 			
 			const misCuotasData = [];
 			for (let i = 0; i < misCuotasId.length; i++) {
-				const cuota: any = await Cuota.findByPk(misCuotasId[i].dataValues.cuota_id, {
+				const cuota: any = await Cuota.findOne({
 					include:[{
 						model: TipoSocio,
-						attributes: ['tipo_socio'],
-						as: 'to'
-					}]
+						attributes: ['tipo_socio']
+					},{
+						model: Actividad,
+						attributes: ['actividad']
+					},{
+						model: CategoriaSocio,
+						attributes: ['categoria']
+					}],
+					where:{
+						id: misCuotasId[i].dataValues.cuota_id
+					}
 				});
 				const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
 				const fechaVto = new Date(año, mes - 1, dia);
@@ -176,11 +201,13 @@ export class CuotasDAO{
 					where:{
 						tipo_socio_id: cuota.dataValues.tipo_socio_id
 					}
-				});
-
+				});	
 				misCuotasData.push({
 					id: misCuotasId[i].dataValues.id,
-					cuota: cuota.to.dataValues.tipo_socio,
+					tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
+					deporte: cuota.Actividad?.dataValues.actividad,
+					tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
+					categoria: cuota.CategoriaSocio?.dataValues.categoria,
 					estado: fechaVto < new Date() ? 'VENCIDA' : 'PENDIENTE',
 					abono_multiple: cuotaProgramada.dataValues.abono_multiple,
 					max_cant_abono: cuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
@@ -191,7 +218,7 @@ export class CuotasDAO{
 					vencida: fechaVto < new Date()
 				});
 			}
-
+			
 			return misCuotasData;
 		}catch(err){
 			logger.info(err);
@@ -215,10 +242,6 @@ export class CuotasDAO{
 			const misCuotasData = [];
 			for (let i = 0; i < misCuotasId.length; i++) {
 				const cuota: any = await Cuota.findOne({
-					include:[{
-						model: CuotaProgramada,
-						attributes: ['tipo_de_cuota']
-					}],
 					where:{
 						id: misCuotasId[i].dataValues.cuota_id
 					}
@@ -227,7 +250,7 @@ export class CuotasDAO{
 				misCuotasData.push({
 					id: misCuotasId[i].dataValues.id, 
 					estado: 'PAGO',
-					tipo_de_cuota: cuota.CuotaProgramada?.dataValues.tipo_de_cuota,
+					tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
 					monto: cuota.monto,
 					fecha_emision:formatDateString(cuota.fecha_emision),
 					forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
@@ -259,19 +282,9 @@ export class CuotasDAO{
 				for (let i = 0; i < misCuotasId.length; i++) {
 					const cuota: any = await Cuota.findOne({
 						include:[
-							{
-								model: CuotaProgramada,
-								attributes: [
-									'tipo_socio_id',
-									'categoria_id',
-									'actividad_id',
-									'tipo_de_cuota'
-								],
-								include:[
 									{
 										model: TipoSocio,
-										attributes: ['tipo_socio'],
-										as: 'to'
+										attributes: ['tipo_socio']
 									},{
 										model: Actividad,
 										attributes: ['actividad']
@@ -279,9 +292,7 @@ export class CuotasDAO{
 										model: CategoriaSocio,
 										attributes: ['categoria']
 									}
-								]
-							}
-						],
+								],						
 						where:{
 							id: misCuotasId[i].dataValues.cuota_id
 						}
@@ -289,10 +300,10 @@ export class CuotasDAO{
 				
 				misCuotasData.push({
 					monto: cuota.monto,
-					tipo_de_cuota: cuota.CuotaProgramada.dataValues.tipo_de_cuota,
-					tipo_de_socio: cuota.CuotaProgramada.to?.dataValues.tipo_socio,
-					actividad: cuota.CuotaProgramada.Actividad?.dataValues.actividad,
-					categoria: cuota.CuotaProgramada.CategoriaSocio?.dataValues.categoria,
+					tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
+					tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
+					actividad: cuota.Actividad?.dataValues.actividad,
+					categoria: cuota.CategoriaSocio?.dataValues.categoria,
 					fecha_emision:formatDateString(cuota.fecha_emision),
 					fecha_vencimiento: cuota.fecha_vencimiento,
 					forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
@@ -320,36 +331,27 @@ export class CuotasDAO{
 			const cuotasSocioData = [];
 			for (let i = 0; i < cuotasSocio.length; i++) {
 				const cuota: any = await Cuota.findOne({
-					include:[
+					include:[	
 						{
 							model: CuotaProgramada,
-							attributes: [
-								'abono_multiple', 
-								'maxima_cantidad_abono_multiple',
-								'tipo_socio_id',
-								'categoria_id',
-								'actividad_id',
-								'tipo_de_cuota'
+							attributes: ['abono_multiple', 'maxima_cantidad_abono_multiple']
+						},
+						{
+							model: TipoSocio,
+							attributes: ['tipo_socio']
+						},{
+							model: Actividad,
+							attributes: ['actividad']
+						},{
+							model: CategoriaSocio,
+							attributes: ['categoria']
+						}		
 							],
-							include:[
-								{
-									model: TipoSocio,
-									attributes: ['tipo_socio'],
-									as: 'to'
-								},{
-									model: Actividad,
-									attributes: ['actividad']
-								},{
-									model: CategoriaSocio,
-									attributes: ['categoria']
-								}
-							]
-						}
-					],
 					where:{
 						id: cuotasSocio[i].dataValues.cuota_id
-					}
+					}		
 				});
+					
 
 				const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
 				const fechaVto = new Date(año, mes - 1, dia);
@@ -357,17 +359,17 @@ export class CuotasDAO{
 					id: cuotasSocio[i].dataValues.id, 
 					estado: cuotasSocio[i].dataValues.estado,
 					monto: cuota.monto,
-					tipo_de_cuota: cuota.CuotaProgramada?.dataValues.tipo_de_cuota,
-					tipo_de_socio: cuota.CuotaProgramada?.to?.dataValues.tipo_socio,
-					actividad: cuota.CuotaProgramada?.Actividad?.dataValues.actividad,
-					categoria: cuota.CuotaProgramada?.CategoriaSocio?.dataValues.categoria,
+					tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
+					tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
+					actividad: cuota.Actividad?.dataValues.actividad,
+					categoria: cuota.CategoriaSocio?.dataValues.categoria,
 					fecha_emision:formatDateString(cuota.fecha_emision),
 					fecha_vencimiento: cuota.fecha_vencimiento,
 					forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
 					fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
-					abono_multiple: fechaVto > new Date() ? false : cuota.CuotaProgramada?.dataValues.abono_multiple,
+					abono_multiple: fechaVto < new Date() ? false : cuota.CuotaProgramada?.dataValues.abono_multiple,
 					max_cant_abono: cuota.CuotaProgramada?.dataValues.maxima_cantidad_abono_multiple,
-					vencida: fechaVto > new Date()
+					vencida: fechaVto < new Date()
 				});
 				
 			}
@@ -381,18 +383,10 @@ export class CuotasDAO{
 	async getAllCuotas(clubAsociado){
 		try{
 			const cuotas = await Cuota.findAll({
-				include: [{
-					model: CuotaProgramada,
-					attributes: [
-						'tipo_socio_id',
-						'categoria_id',
-						'actividad_id',
-						'tipo_de_cuota'
-					],include:[
+				include:[
 						{
 							model: TipoSocio,
-							attributes: ['tipo_socio'],
-							as: 'to'
+							attributes: ['tipo_socio']
 						},{
 							model: Actividad,
 							attributes: ['actividad']
@@ -400,8 +394,7 @@ export class CuotasDAO{
 							model: CategoriaSocio,
 							attributes: ['categoria']
 						}
-					]
-				}],
+					],
 				where: {
 					club_asociado_id: clubAsociado
 				},

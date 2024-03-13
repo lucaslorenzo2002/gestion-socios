@@ -23,6 +23,7 @@ export class SociosRouter {
         sociosRouter.post('/agrearsociosatipo/:tiposocioid', adminAuthMiddleware, this.controller.agregarSocioATipoDeSocio);
         //sociosRouter.post('/actualizaractividadessocio', adminAuthMiddleware, this.controller.actualizarActividadesSocio);
         sociosRouter.post('/filtrarsocios', adminAuthMiddleware, this.controller.filterSocios);
+        sociosRouter.get('/sociosemail', adminAuthMiddleware, this.controller.getAllSociosWithEmail);
         return sociosRouter;
     }
 }

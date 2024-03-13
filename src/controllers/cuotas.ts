@@ -11,32 +11,30 @@ export class CuotasController{
 	} 
 
 	programarCuota = asyncHandler(async(req:any, res) => {
-		try {
-			const {
-				tipoDeCuota,
-				monto, 
-				tipoDeSocio, 
-				actividad, 
-				categorias, 
-				fechaEmision, 
-				abonoMultiple, 
-				maxCantAbonoMult
-			} = req.body;
-			const {club_asociado} = req.user;
-			const nuevaCuota = await this.cuotasApi.programarCuota(
-				tipoDeCuota, 
-				fechaEmision, 
-				monto, 
-				tipoDeSocio, 
-				actividad, 
-				categorias || [], 
-				abonoMultiple, 
-				abonoMultiple ? maxCantAbonoMult : null, 
-				club_asociado);
+		const {
+			tipoDeCuota,
+			monto, 
+			tipoDeSocio, 
+			actividad, 
+			categorias, 
+			fechaEmision, 
+			abonoMultiple, 
+			maxCantAbonoMult
+		} = req.body;
+		const {club_asociado} = req.user;
+		
+		const nuevaCuota = await this.cuotasApi.programarCuota(
+			tipoDeCuota, 
+			fechaEmision, 
+			monto, 
+			tipoDeSocio, 
+			actividad, 
+			categorias || [], 
+			abonoMultiple, 
+			abonoMultiple ? maxCantAbonoMult : null, 
+			club_asociado);
+
 			res.status(201).json({success: true, data: nuevaCuota});
-		} catch (err) {
-			res.status(500).json({success: false, message: err.message});
-		}
 	});	  
 
 	getMisCuotasPendientes = asyncHandler(async(req:any, res) => {
@@ -104,11 +102,10 @@ export class CuotasController{
 
 	pagarCuotaDesdeAdmin = asyncHandler(async(req: any, res) => {
 		try {
-			const{formaDePago, deuda, id} = req.body;
-			console.log(req.body);
+			const{formaDePago, deuda, mesesAbonados, tipoDeCuota, id} = req.body;
 			const{sociocuotaid} = req.params;
 			const{club_asociado_id} = req.user;
-			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, club_asociado_id);
+			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, club_asociado_id, tipoDeCuota, mesesAbonados);
 			const socio = await this.sociosApi.getSocioById(id);
 			res.status(201).json({success: true, message: `la cuota de ${socio.dataValues.nombres} ${socio.dataValues.apellido} ha sido pagada con exito`});
 		} catch (err) {

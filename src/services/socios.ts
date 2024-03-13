@@ -122,4 +122,16 @@ export class SociosApi{
 	async filterSociosCuotaByTipoSocio(tipoSocio: number, club: number){
 		return await this.sociosDAO.filterSociosCuotaByTipoSocio(tipoSocio, club);
 	}
+
+	async updateSocioMesesAbonadosCuotaSocial(mesesAbonados: number, clubAsociado: number, socioId: number){
+		return await this.sociosDAO.updateSocioMesesAbonadosCuotaSocial(mesesAbonados, clubAsociado, socioId);
+	}
+
+	async getAllSociosWithEmail(clubAsociado: number){
+		return await this.sociosDAO.getAllSociosWithEmail(clubAsociado);
+	}
+
+	async getAllSociosWithEmailInActividadOrTipoSocio(actividadId: number, tipoSocio: number, clubAsociado: number){
+		return await this.sociosDAO.getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado);
+	}
 }

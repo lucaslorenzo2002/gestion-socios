@@ -6,6 +6,8 @@ import {SociosApi} from '../services/socios.js';
 import {AdministradoresApi} from '../services/administradores.js';
 import { NextFunction, Request, Response } from 'express';
 import { ISocioAttrs } from '../interfaces/ISocioAttrs.js';
+import {validationResult} from 'express-validator';
+import { RequestValidationError } from '../errors/request-validation-error.js';
 
 export class AuthController{
     authApi: AuthApi;
@@ -18,14 +20,18 @@ export class AuthController{
 	}
 
 	completeSocioRegister = asyncHandler(async(req:Request, res:Response) => {
-		try {
-			const {email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular} = req.body;
-			const newSocio = await this.authApi.completeSocioRegister(email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular);
+		const {email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular} = req.body;
+		
+		const errors = validationResult(req);
 
-			res.status(201).json({success: true, message: typeof newSocio === 'string' ? newSocio : 'Ha sido registrado con exito, verifique su email para iniciar sesion'});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		if(!errors.isEmpty()){
+			throw new RequestValidationError(errors.array());
 		}
+
+		console.log(confirmPassword, password)
+		const newSocio = await this.authApi.completeSocioRegister(email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular);
+
+		res.status(201).json({success: true, message: 'Ha sido registrado con exito, verifique su email para iniciar sesion'});
 	});	  
 
 	validateUser = asyncHandler(async (req:Request, res:Response) => {
@@ -54,10 +60,10 @@ export class AuthController{
 				async (error) => {
 					if (error) return next(error.message);            
 					const token = jwt.sign({ id: user.id}, 'adsfdcsfeds3w423ewdas');
-					res.cookie('token', token , { 
+					res.cookie('token', token /* , { 
 						sameSite: 'none', 
 						secure: true 
-					});
+					} */);
 					const socio = await this.sociosApi.getSocioById(user.id);
 					return res.status(201).json({ success: true, message: 'sesion iniciada', socio});
 				});
@@ -65,17 +71,14 @@ export class AuthController{
 	});
 
 	loginAdmin = asyncHandler(async (req:any, res:any) => {
-		try {
-			const administrador = await this.administradoresApi.logInAdministrador(req.body.codigoAdministrador);
-			const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
-			res.cookie('token', token , { 
-				sameSite: 'none', 
-				secure: true 
-			});
-			return res.status(201).json({administrador});
-		} catch (err) {
-			return res.status(401).json({ success: false, message: 'error al iniciar sesion: ' + err.message});
-		}
+		const{codigoAdministrador} = req.body;
+		const administrador = await this.administradoresApi.logInAdministrador(codigoAdministrador);
+		const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
+		res.cookie('token', token/*  , { 
+			sameSite: 'none', 
+			secure: true 
+		} */);
+		return res.status(201).json({administrador});
 	});
 
 	logout = asyncHandler(async (req:any, res:any) => {
@@ -93,12 +96,17 @@ export class AuthController{
 	});
 	
 	resetPasswordRequest = asyncHandler(async(req:Request, res:Response) => {
-		try {
-			await this.authApi.resetPasswordRequest(req.body.email);
-			res.status(200).json({success: true, message: 'mail enviado'});
-		} catch (error) {
-			res.status(500).json({success: false, message: 'mail no enviado, probar de nuevo'});
+		const {email} = req.body;
+
+		const errors = validationResult(req);
+
+		if(!errors.isEmpty()){
+			throw new RequestValidationError(errors.array());
 		}
+
+		await this.authApi.resetPasswordRequest(email);
+
+		res.status(200).json({success: true, message: 'Revise su casilla de correo para recuperar su contraseña'});
 	}); 
 
 	resetPasswordUI = asyncHandler(async(req:Request, res:Response) => {
@@ -111,11 +119,17 @@ export class AuthController{
 	});  
 
 	resetPassword = asyncHandler(async(req:Request, res:Response) => {
-		try {
-			await this.authApi.resetPassword(req.params.token, req.body.newPassword, req.body.confirmNewPassword);
-			res.status(200).json({mensaje: 'la contraseña ha sido actualizada con exito, inicie sesion nuevamente'});
-		} catch (error) {
-			res.status(500).json({success: false, message: 'hubo un error ' + error.message});
+		const{newPassword, confirmNewPassword} = req.body;
+		const{token} = req.params;
+
+		const errors = validationResult(req);
+
+		if(!errors.isEmpty()){
+			throw new RequestValidationError(errors.array());
 		}
+
+		await this.authApi.resetPassword(token, newPassword, confirmNewPassword);
+			
+		res.status(200).json({mensaje: 'la contraseña ha sido actualizada con exito, inicie sesion nuevamente'});
 	});  
 }

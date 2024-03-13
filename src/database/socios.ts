@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import {Actividad} from '../models/actividad.js';
 import { Actividad_Socio } from '../models/actividad_socio.js';
 //import {Actividad_Socio} from '../models/actividad_socio.js';
@@ -459,7 +460,7 @@ export class SociosDAO{
 	async filterSociosCuotaByTipoSocio(tipoSocio: number, club: number){
 		try {		
 			return await Socio.findAll({
-					attributes:['id', 'email', 'estado_socio', 'deuda'],
+					attributes:['id', 'email', 'estado_socio', 'deuda', 'meses_abonados_cuota_social'],
 					where:{
 						tipo_socio_id: tipoSocio,
 						club_asociado_id: club
@@ -470,25 +471,95 @@ export class SociosDAO{
 		}
 	}
 
-	async updateSocioMesesAbonados(tipoDeCuota: string, mesesAbonados: number, clubAsociado: number, socioId: number){
+	async updateSocioMesesAbonadosCuotaSocial(mesesAbonados: number, clubAsociado: number, socioId: number){
 		try {
-			if(tipoDeCuota === 'cuota social'){
-				return Socio.update({meses_abonados_cuota_social: mesesAbonados},{
-					where: {
-						id: socioId,
-						club_asociado_id: clubAsociado
-					}
-				});
-			}else{
-				return Socio.update({meses_abonados_cuota_deporte: mesesAbonados},{
-					where: {
-						id: socioId,
-						club_asociado_id: clubAsociado
-					}
-				});
-			}
+			return Socio.update({meses_abonados_cuota_social: mesesAbonados},{
+				where: {
+					id: socioId,
+					club_asociado_id: clubAsociado
+				}
+			});
 		} catch (err) {
 			logger.info(err);
+		}
+	}
+
+	async getAllSociosWithEmail(clubAsociado: number){
+		try {
+			return await Socio.findAll({
+				attributes:['id', 'nombres', 'apellido', 'email'],
+				where:{
+					club_asociado_id: clubAsociado,
+					[Op.not]: [
+						{
+							email: null
+						}
+					]
+				}
+			})
+		} catch (err) {
+			logger.info(err)
+		}
+	}
+
+	async getAllSociosWithEmailInActividadOrTipoSocio(actividadId: number, tipoSocio: number, clubAsociado: number){
+		try {
+			if(actividadId && tipoSocio){
+				return await Socio.findAll({
+					attributes:['email'],
+					where:{
+						actividad_id: actividadId,
+						tipo_socio_id: tipoSocio,
+						club_asociado_id: clubAsociado,
+						[Op.not]: [
+							{
+								email: null
+							}
+						]
+					}
+				})
+			}else if(actividadId && !tipoSocio){
+				return await Socio.findAll({
+					attributes:['email'],
+					where:{
+						actividad_id: actividadId,
+						club_asociado_id: clubAsociado,
+						[Op.not]: [
+							{
+								email: null
+							}
+						]
+					}
+				})
+			}else if(!actividadId && tipoSocio){
+				return await Socio.findAll({
+					attributes:['email'],
+					where:{
+						tipo_socio_id: tipoSocio,
+						club_asociado_id: clubAsociado,
+						[Op.not]: [
+							{
+								email: null
+							}
+						]
+					}
+				})
+			}else{
+				return await Socio.findAll({
+					attributes:['email'],
+					where:{
+						club_asociado_id: clubAsociado,
+						[Op.not]: [
+							{
+								email: null
+							}
+						]
+					}
+				})
+			}
+			return 
+		} catch (err) {
+			logger.info(err)
 		}
 	}
 }

@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { Actividad_Socio } from '../models/actividad_socio.js';
 import { Socio } from '../models/socio.js';
 import logger from '../utils/logger.js';
@@ -427,7 +428,7 @@ export class SociosDAO {
     async filterSociosCuotaByTipoSocio(tipoSocio, club) {
         try {
             return await Socio.findAll({
-                attributes: ['id', 'email', 'estado_socio', 'deuda'],
+                attributes: ['id', 'email', 'estado_socio', 'deuda', 'meses_abonados_cuota_social'],
                 where: {
                     tipo_socio_id: tipoSocio,
                     club_asociado_id: club
@@ -438,24 +439,96 @@ export class SociosDAO {
             logger.info(err);
         }
     }
-    async updateSocioMesesAbonados(tipoDeCuota, mesesAbonados, clubAsociado, socioId) {
+    async updateSocioMesesAbonadosCuotaSocial(mesesAbonados, clubAsociado, socioId) {
         try {
-            if (tipoDeCuota === 'cuota social') {
-                return Socio.update({ meses_abonados_cuota_social: mesesAbonados }, {
+            return Socio.update({ meses_abonados_cuota_social: mesesAbonados }, {
+                where: {
+                    id: socioId,
+                    club_asociado_id: clubAsociado
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getAllSociosWithEmail(clubAsociado) {
+        try {
+            return await Socio.findAll({
+                attributes: ['id', 'nombres', 'apellido', 'email'],
+                where: {
+                    club_asociado_id: clubAsociado,
+                    [Op.not]: [
+                        {
+                            email: null
+                        }
+                    ]
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado) {
+        try {
+            if (actividadId && tipoSocio) {
+                return await Socio.findAll({
+                    attributes: ['email'],
                     where: {
-                        id: socioId,
-                        club_asociado_id: clubAsociado
+                        actividad_id: actividadId,
+                        tipo_socio_id: tipoSocio,
+                        club_asociado_id: clubAsociado,
+                        [Op.not]: [
+                            {
+                                email: null
+                            }
+                        ]
+                    }
+                });
+            }
+            else if (actividadId && !tipoSocio) {
+                return await Socio.findAll({
+                    attributes: ['email'],
+                    where: {
+                        actividad_id: actividadId,
+                        club_asociado_id: clubAsociado,
+                        [Op.not]: [
+                            {
+                                email: null
+                            }
+                        ]
+                    }
+                });
+            }
+            else if (!actividadId && tipoSocio) {
+                return await Socio.findAll({
+                    attributes: ['email'],
+                    where: {
+                        tipo_socio_id: tipoSocio,
+                        club_asociado_id: clubAsociado,
+                        [Op.not]: [
+                            {
+                                email: null
+                            }
+                        ]
                     }
                 });
             }
             else {
-                return Socio.update({ meses_abonados_cuota_deporte: mesesAbonados }, {
+                return await Socio.findAll({
+                    attributes: ['email'],
                     where: {
-                        id: socioId,
-                        club_asociado_id: clubAsociado
+                        club_asociado_id: clubAsociado,
+                        [Op.not]: [
+                            {
+                                email: null
+                            }
+                        ]
                     }
                 });
             }
+            return;
         }
         catch (err) {
             logger.info(err);

@@ -198,4 +198,32 @@ export class ActividadesDAO{
 			logger.info(err);
 		}
 	}
+
+	async getActividadSocio(socioId: number, actividadId: number, clubAsociadoId: number){
+		try {
+			return await Actividad_Socio.findOne({
+				where:{
+					socio_id: socioId,
+					actividad_id: actividadId,
+					club_asociado_id: clubAsociadoId
+				}
+			})
+		} catch (err) {
+			logger.info(err)
+		}
+	}
+
+	async updateSocioMesesAbonadosCuotaDeportiva(mesesAbonados: number, socioId: number, actividadId: number, clubAsociado: number){
+		try {
+			return await Actividad_Socio.update({meses_abonados_cuota_deporte: mesesAbonados},{
+				where: {
+					socio_id: socioId,
+					actividad_id: actividadId,
+					club_asociado_id: clubAsociado
+				}
+			});
+		} catch (err) {
+			logger.info(err);
+		}
+	}
 }

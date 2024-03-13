@@ -1,4 +1,5 @@
 import { ActividadesDAO } from '../database/actividades.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
 import { CategoriasSocioApi } from './categoriasSocio.js';
 export class ActividadesApi {
     constructor() {
@@ -8,9 +9,9 @@ export class ActividadesApi {
     async createActividad(actividad, limiteDeJugadores, clubAsociadoId, categorias, poseeCategorias) {
         //no me genera el id automaticamente, entoces lo creo de forma aleatoria
         if (poseeCategorias && categorias.length === 0)
-            throw new Error('Debe asignar al menos una categoria');
+            throw new BadRequestError('Debe asignar al menos una categoria');
         if (!poseeCategorias && categorias.length > 0)
-            throw new Error('Elimine las categorias creadas antes de seguir');
+            throw new BadRequestError('Elimine las categorias creadas antes de seguir');
         const nuevaActividad = await this.actividadesDAO.crearActividad({
             actividad,
             club_asociado_id: clubAsociadoId,
@@ -45,7 +46,7 @@ export class ActividadesApi {
         let cantidadDeJugadoresActividadActualizada = cantidadDeJugadoresActividad.dataValues.cantidad_de_jugadores + sociosId.length;
         const limiteDeJugadores = cantidadDeJugadoresActividad.dataValues.limite_de_jugadores;
         if (limiteDeJugadores !== null && cantidadDeJugadoresActividadActualizada > limiteDeJugadores) {
-            return 'Excediste el limite de jugadores para el deporte';
+            throw new BadRequestError('Excediste el limite de jugadores para el deporte');
         }
         await this.actividadesDAO.actualizarActividadCantidadDeJugadores(cantidadDeJugadoresActividadActualizada, actividadId);
         for (const socioId of sociosId) {
@@ -103,6 +104,12 @@ export class ActividadesApi {
     }
     async eliminarActividad(id, club) {
         return await this.actividadesDAO.eliminarActividad(id, club);
+    }
+    async getActividadSocio(socioId, actividadId, clubAsociadoId) {
+        return await this.actividadesDAO.getActividadSocio(socioId, actividadId, clubAsociadoId);
+    }
+    async updateSocioMesesAbonadosCuotaDeportiva(mesesAbonados, socioId, actividadId, clubAsociado) {
+        return await this.actividadesDAO.updateSocioMesesAbonadosCuotaDeportiva(mesesAbonados, socioId, actividadId, clubAsociado);
     }
 }
 //# sourceMappingURL=actividades.js.map

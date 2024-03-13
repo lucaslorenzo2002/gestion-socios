@@ -1,4 +1,5 @@
 import {ActividadesDAO} from '../database/actividades.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
 import { CategoriasSocioApi } from './categoriasSocio.js';
 
 export class ActividadesApi{
@@ -11,8 +12,8 @@ export class ActividadesApi{
 
 	async createActividad(actividad: string, limiteDeJugadores, clubAsociadoId, categorias, poseeCategorias){
 		//no me genera el id automaticamente, entoces lo creo de forma aleatoria
-		if(poseeCategorias && categorias.length === 0) throw new Error('Debe asignar al menos una categoria');
-		if(!poseeCategorias && categorias.length > 0) throw new Error('Elimine las categorias creadas antes de seguir');
+		if(poseeCategorias && categorias.length === 0) throw new BadRequestError('Debe asignar al menos una categoria');
+		if(!poseeCategorias && categorias.length > 0) throw new BadRequestError('Elimine las categorias creadas antes de seguir');
 
 		const nuevaActividad = await this.actividadesDAO.crearActividad({
 			actividad, 
@@ -59,7 +60,7 @@ export class ActividadesApi{
 		const limiteDeJugadores = cantidadDeJugadoresActividad.dataValues.limite_de_jugadores;
 
 		if(limiteDeJugadores !== null && cantidadDeJugadoresActividadActualizada > limiteDeJugadores){
-			return 'Excediste el limite de jugadores para el deporte'
+			throw new BadRequestError('Excediste el limite de jugadores para el deporte')
 		}
 
 		await this.actividadesDAO.actualizarActividadCantidadDeJugadores(cantidadDeJugadoresActividadActualizada, actividadId)
@@ -136,5 +137,13 @@ export class ActividadesApi{
 
 	async eliminarActividad(id, club){
 		return await this.actividadesDAO.eliminarActividad(id, club);
+	}
+
+	async getActividadSocio(socioId: number, actividadId: number, clubAsociadoId: number){
+		return await this.actividadesDAO.getActividadSocio(socioId, actividadId, clubAsociadoId);
+	}
+
+	async updateSocioMesesAbonadosCuotaDeportiva(mesesAbonados: number, socioId: number, actividadId: number, clubAsociado: number){
+		return await this.actividadesDAO.updateSocioMesesAbonadosCuotaDeportiva(mesesAbonados, socioId, actividadId, clubAsociado)
 	}
 }

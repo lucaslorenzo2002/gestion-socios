@@ -15,13 +15,14 @@ export const createOrder = async (infoCuotas) => {
         payment_methods: {
             installments: 1
         },
-        notification_url: 'https://ea1f-2800-810-456-942a-ecc2-d16c-1dc-30f4.ngrok-free.app/api/webhook'
+        notification_url: 'https://59ea-2800-810-456-942a-5dab-2c8-ba20-ae7e.ngrok-free.app/api/webhook'
     };
     for (let i = 0; i < infoCuotas.length; i++) {
         preference['items'].push({
             title: 'CUOTA',
             id: infoCuotas[i].id.toString(),
             unit_price: infoCuotas[i].monto,
+            category_id: infoCuotas[i].tipoDeCuota,
             currency_id: 'ARS',
             quantity: infoCuotas[i].cantidad,
         });

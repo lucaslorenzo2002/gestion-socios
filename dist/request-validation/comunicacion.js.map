@@ -1,0 +1,1 @@
+{"version":3,"file":"comunicacion.js","sourceRoot":"","sources":["../../src/request-validation/comunicacion.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,IAAI,EAAE,MAAM,mBAAmB,CAAA;AAExC,MAAM,CAAC,MAAM,sCAAsC,GAAG;IAClD,IAAI,CAAC,OAAO,CAAC;SACR,OAAO,CAAC,EAAC,GAAG,EAAE,CAAC,EAAC,CAAC,CAAC,WAAW,CAAC,wCAAwC,CAAC;CAC3E,CAAA"}

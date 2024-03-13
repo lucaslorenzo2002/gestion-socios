@@ -132,6 +132,11 @@ export class SociosController {
                 res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
             }
         });
+        this.getAllSociosWithEmail = asyncHandler(async (req, res) => {
+            const { club_asociado } = req.user;
+            const sociosFiltrados = await this.sociosApi.getAllSociosWithEmail(club_asociado.id);
+            res.status(201).json({ success: true, data: sociosFiltrados });
+        });
         this.sociosApi = new SociosApi();
     }
 }

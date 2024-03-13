@@ -1,4 +1,5 @@
 import express from 'express';
+import 'express-async-errors'; 
 import path from 'path';
 import passport from 'passport';
 import morgan from 'morgan';
@@ -10,6 +11,8 @@ import fileUpload from 'express-fileupload';
 import exphbs from 'express-handlebars';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import { errorHandler } from './middlewares/error-handler.js';
+import { NotFoundError } from './errors/not-found-error.js';
 
 //SETTINGS
 const app = express(); 
@@ -33,7 +36,7 @@ app.use(fileUpload({
 }));
 app.use(cookieParser());
 app.use(cors({
-	origin: ['https://65e70e73a596689b35a227d3--extraordinary-sundae-24a1ed.netlify.app/', 'http://localhost:5174'],
+	origin: ['https://65e70e73a596689b35a227d3--extraordinary-sundae-24a1ed.netlify.app/', 'http://localhost:5173'],
 	methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 	allowedHeaders: ['Access-Control-Allow-Origin', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
 	credentials: true
@@ -47,7 +50,6 @@ app.engine('handlebars', exphbs.engine({
 app.set('view engine', 'handlebars');
 
 //ROUTES
-
 import {AuthRouter} from './routes/auth.js';
 const authRouter = new AuthRouter();
 app.use('/api', authRouter.start());
@@ -75,5 +77,15 @@ app.use('/api', actividadesRouter.start());
 import {TiposSocioRouter} from './routes/tiposSocio.js';
 const tiposSocioRouter = new TiposSocioRouter();
 app.use('/api', tiposSocioRouter.start());
+
+import {ComunicacionRouter} from './routes/comunicacion.js';
+const comunicacionRouter = new ComunicacionRouter();
+app.use('/api', comunicacionRouter.start());
+
+app.all('*', (req, res, next) => {
+	throw new NotFoundError();
+})
+
+app.use(errorHandler);
 
 export default httpServer;

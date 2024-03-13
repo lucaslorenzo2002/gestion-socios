@@ -149,4 +149,11 @@ export class SociosController{
 		}
 	});	 
 
+	getAllSociosWithEmail = asyncHandler(async(req: any, res: Response) => {
+		const {club_asociado} = req.user;
+		const sociosFiltrados = await this.sociosApi.getAllSociosWithEmail(club_asociado.id);
+		
+		res.status(201).json({success: true, data: sociosFiltrados});
+	});	 
+
 }

@@ -39,10 +39,6 @@ export const Socio = sequelize.define('Socio',{
 		type: DataTypes.STRING,
 		defaultValue: 'ACTIVO'
 	},
-	meses_abonados_cuota_deporte:{
-		type: DataTypes.INTEGER,
-		defaultValue: 0
-	},
 	meses_abonados_cuota_social:{
 		type: DataTypes.INTEGER,
 		defaultValue: 0

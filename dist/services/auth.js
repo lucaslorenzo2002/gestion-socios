@@ -3,6 +3,7 @@ import { TokenDAO } from '../database/token.js';
 import sendEmail from '../utils/sendEmail.js';
 import crypto from 'crypto';
 import { hash } from '../utils/hashing.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
 export class AuthApi {
     constructor() {
         this.sociosDAO = new SociosDAO();
@@ -25,29 +26,25 @@ export class AuthApi {
     }
     async completeSocioRegister(email, sexo, tipoDeDocumento, confirmarPassword, password, nroDocumento, celular) {
         if (!email || !password || !sexo || !nroDocumento || !tipoDeDocumento || !confirmarPassword || !celular) {
-            return ('completa todos los campos');
+            throw new BadRequestError('Campos incompletos');
         }
         const socioNroDocumento = await this.sociosDAO.getSocioById(nroDocumento);
         if (!socioNroDocumento) {
-            return ('el numero de documento no esta asociado');
+            throw new BadRequestError('El numero de documento no esta asociado a ningun club');
+        }
+        if (socioNroDocumento && socioNroDocumento.dataValues.validado) {
+            throw new BadRequestError('Socio ya registrado');
         }
         const socioEmail = await this.sociosDAO.getSocioByEmail(email);
         if (socioEmail) {
-            return ('el mail ya esta registrado');
+            throw new BadRequestError('El mail ya esta registrado');
         }
         const socioCelular = await this.sociosDAO.getSocioByCelular(celular);
         if (socioCelular) {
-            return ('el telefono celular ya esta registrado');
-        }
-        if (password.length < 8) {
-            return ('la contraseña debe tener al menos 8 caracteres');
-        }
-        if (password !== confirmarPassword) {
-            return ('las contraseñas no coinciden');
+            throw new BadRequestError('El telefono celular ya esta registrado');
         }
         await this.verificateEmail(email, nroDocumento);
-        const newSocio = await this.sociosDAO.completeSocioRegister(nroDocumento, email, hash(password), sexo, tipoDeDocumento, celular);
-        return newSocio;
+        return await this.sociosDAO.completeSocioRegister(nroDocumento, email, hash(password), sexo, tipoDeDocumento, celular);
     }
     async validateUser(tokenParam) {
         const token = await this.TokenDAO.findOneTokenByToken(tokenParam);
@@ -56,14 +53,13 @@ export class AuthApi {
     async resetPasswordRequest(email) {
         const socio = await this.sociosDAO.getSocioByEmail(email);
         if (!socio) {
-            throw new Error('El socio no esta registrado');
+            throw new BadRequestError('El mail ingresado no esta asociado a ningun club');
         }
         let token = await this.TokenDAO.findOneTokenByUser(socio.dataValues.id);
         if (token) {
             await this.TokenDAO.deleteOneToken(socio.dataValues.id);
         }
         let resetToken = crypto.randomBytes(32).toString('hex');
-        console.log(resetToken);
         await this.TokenDAO.createToken(socio.dataValues.id, resetToken);
         let resetUrl = `https://lao-software-backend.onrender.com/api/resetpassword/${resetToken}`;
         let message = `
@@ -80,12 +76,7 @@ export class AuthApi {
     }
     async resetPassword(tokenParam, newPassword, confirmNewPassword) {
         const token = await this.TokenDAO.findOneTokenByToken(tokenParam);
-        if (newPassword === confirmNewPassword) {
-            await this.sociosDAO.updateSocioPassword(token.dataValues.socio_id, hash(newPassword));
-        }
-        else {
-            throw new Error('las contrasenias no son iguales');
-        }
+        await this.sociosDAO.updateSocioPassword(token.dataValues.socio_id, hash(newPassword));
     }
     async findOneTokenByToken(tokenParam) {
         return await this.TokenDAO.findOneTokenByToken(tokenParam);

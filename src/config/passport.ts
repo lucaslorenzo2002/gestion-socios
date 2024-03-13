@@ -2,7 +2,6 @@ import passport from 'passport';
 import bcrypt from 'bcrypt';
 import { Strategy as LocalStrategy } from 'passport-local';
 import {Request} from 'express';
-import { ISocioAttrs } from '../interfaces/ISocioAttrs.js';
 
 import {SociosDAO} from '../database/socios.js';
 const sociosDAO = new SociosDAO();

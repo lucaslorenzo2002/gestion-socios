@@ -10,7 +10,11 @@ export const Actividad_Socio = sequelize.define('Actividad_Socio', {
 		type: DataTypes.INTEGER,
 		autoIncrement: true,
 		primaryKey: true
-	}
+	},
+	meses_abonados_cuota_deporte:{
+		type: DataTypes.INTEGER,
+		defaultValue: 0
+	},
 }, { 
 	underscored: true,
 	timestamps: false 

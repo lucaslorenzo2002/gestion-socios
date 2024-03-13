@@ -11,6 +11,7 @@ export class PagosController {
                 this.aditionalPaymentInformation.set('clubAsociado', club_asociado_id);
                 this.aditionalPaymentInformation.set('socioDeuda', deuda);
                 this.aditionalPaymentInformation.set('socioId', id);
+                this.aditionalPaymentInformation.set('cuotasAPagar', req.body.length);
                 res.status(201).json({ success: true, message: 'orden creada con exito', url: mercadoPagoResponse.body.init_point });
             }
             catch (err) {
@@ -20,9 +21,12 @@ export class PagosController {
         });
         this.reciveWebhook = asyncHandler(async (req, res) => {
             try {
+                const cantCuotasAPagar = this.aditionalPaymentInformation.get('cuotasAPagar');
                 if (req.query.type === 'payment') {
                     const order = await this.pagosApi.reciveWebhook(req.query['data.id']);
-                    await this.cuotasApi.pagarCuota(paymentMethods(order.body.payment_method_id, order.body.payment_type_id), this.aditionalPaymentInformation.get('socioDeuda'), this.aditionalPaymentInformation.get('socioId'), order.body.additional_info.items, this.aditionalPaymentInformation.get('clubAsociado'));
+                    for (let i = 0; i < cantCuotasAPagar; i++) {
+                        await this.cuotasApi.pagarCuota(paymentMethods(order.body.payment_method_id, order.body.payment_type_id), this.aditionalPaymentInformation.get('socioDeuda'), this.aditionalPaymentInformation.get('socioId'), order.body.additional_info.items[i].id, this.aditionalPaymentInformation.get('clubAsociado'), order.body.additional_info.items[i].category_id, order.body.additional_info.items[i].quantity);
+                    }
                 }
                 res.status(201).json({ success: true, message: 'webhook' });
             }
