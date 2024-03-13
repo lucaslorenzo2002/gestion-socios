@@ -24,4 +24,4 @@ export default new Sequelize(process.env.PRODUCTION_DB_CONNECTION_STRING, {
 			rejectUnauthorized: false,
 		},
 	},
-});  */
+});  
