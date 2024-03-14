@@ -252,7 +252,7 @@ export class CuotasDAO{
 					estado: 'PAGO',
 					tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
 					monto: cuota.monto,
-					fecha_emision:formatDateString(cuota.fecha_emision),
+					fecha_emision:cuota.dataValues.fecha_emision,
 					forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
 					fecha_de_pago: formatDateString(misCuotasId[i].dataValues.fecha_pago),
 				});
@@ -363,7 +363,7 @@ export class CuotasDAO{
 					tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
 					actividad: cuota.Actividad?.dataValues.actividad,
 					categoria: cuota.CategoriaSocio?.dataValues.categoria,
-					fecha_emision:formatDateString(cuota.fecha_emision),
+					fecha_emision: cuota.dataValues.fecha_emision,
 					fecha_vencimiento: cuota.fecha_vencimiento,
 					forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
 					fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
