@@ -60,10 +60,10 @@ export class AuthController{
 				async (error) => {
 					if (error) return next(error.message);            
 					const token = jwt.sign({ id: user.id}, 'adsfdcsfeds3w423ewdas');
-					res.cookie('token', token /* , { 
+					res.cookie('token', token , { 
 						sameSite: 'none', 
 						secure: true 
-					} */);
+					});
 					const socio = await this.sociosApi.getSocioById(user.id);
 					return res.status(201).json({ success: true, message: 'sesion iniciada', socio});
 				});
@@ -74,10 +74,10 @@ export class AuthController{
 		const{codigoAdministrador} = req.body;
 		const administrador = await this.administradoresApi.logInAdministrador(codigoAdministrador);
 		const token = jwt.sign({ id: administrador.admin.id}, 'adsfdcsfeds3w423ewdas');
-		res.cookie('token', token/*  , { 
+		res.cookie('token', token, { 
 			sameSite: 'none', 
 			secure: true 
-		} */);
+		});
 		return res.status(201).json({administrador});
 	});
 
