@@ -17,7 +17,7 @@ export const createOrder = async(infoCuotas) => {
 		payment_methods:{
 			installments: 1
 		}, 
-		notification_url: 'https://59ea-2800-810-456-942a-5dab-2c8-ba20-ae7e.ngrok-free.app/api/webhook'
+		notification_url: 'https://208a-2800-810-456-80c5-a033-c736-4832-4527.ngrok-free.app/api/webhook'
 
 	};
 

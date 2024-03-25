@@ -3,6 +3,7 @@ import cluster from 'cluster';
 import os from 'os';
 import logger from './utils/logger.js';
 import sequelize from './config/sequelizeConfig.js';
+import {client} from './config/redisConfig.js';
 /* require('./src/models/socio');
 require('./src/models/cuota');
 require('./src/models/actividad');
@@ -11,6 +12,7 @@ require('./src/models/socio_cuota');
 require('./src/models/actividad_socio');
 require('./src/models/club');
  */
+
 async function server (){
 	const numCpus = os.cpus().length;
 	
@@ -33,6 +35,14 @@ async function server (){
 		}).catch((err: Error) => {
 			logger.info(err.message);
 		});
+
+		client.on('error', err => logger.info('Redis Client Error', err.message));
+
+		await client.connect().then(() => {
+			logger.info('Redis successfuly running');
+		}).catch((err: Error) => {
+			logger.info(err.message);
+		});;
 
 		const PORT = process.env.PORT || 4000;
 

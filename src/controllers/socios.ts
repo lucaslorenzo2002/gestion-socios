@@ -156,4 +156,19 @@ export class SociosController{
 		res.status(201).json({success: true, data: sociosFiltrados});
 	});	 
 
+	getAllSociosSinGrupoFamiliar = asyncHandler(async(req: any, res: Response) => {
+		const {club_asociado} = req.user;
+		const socios = await this.sociosApi.getAllSociosSinGrupoFamiliar(club_asociado.id);
+		
+		res.status(201).json({success: true, data: socios});
+	});	 
+
+	getAllFamiliaresEnGrupoFamiliar = asyncHandler(async(req: any, res: Response) => {
+		const {club_asociado} = req.user;
+		const {grupofamiliarid} = req.params;
+		const familiares = await this.sociosApi.getAllFamiliaresEnGrupoFamiliar(grupofamiliarid, club_asociado.id);
+		
+		res.status(201).json({success: true, data: familiares}); 
+	});	 
+
 }

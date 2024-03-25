@@ -2,13 +2,15 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/sequelizeConfig.js';
 import {Socio} from './socio.js';
 import {Cuota} from './cuota.js';
-import {CuotaProgramada} from './cuotaProgramada.js';
 
 export const Socio_Cuota = sequelize.define('Socio_Cuota', {
 	id:{
 		type: DataTypes.INTEGER,
 		autoIncrement: true,
 		primaryKey: true
+	},
+	monto:{
+		type: DataTypes.INTEGER
 	},
 	forma_de_pago:{
 		type: DataTypes.STRING

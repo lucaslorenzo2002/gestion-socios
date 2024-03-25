@@ -6,6 +6,9 @@ export const Socio_Cuota = sequelize.define('Socio_Cuota', {
         autoIncrement: true,
         primaryKey: true
     },
+    monto: {
+        type: DataTypes.INTEGER
+    },
     forma_de_pago: {
         type: DataTypes.STRING
     },

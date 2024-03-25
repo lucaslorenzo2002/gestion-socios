@@ -28,20 +28,16 @@ export class AuthController{
 			throw new RequestValidationError(errors.array());
 		}
 
-		console.log(confirmPassword, password)
-		const newSocio = await this.authApi.completeSocioRegister(email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular);
+		await this.authApi.completeSocioRegister(email, sexo, tipoDeDocumento, confirmPassword, password, nroDocumento, celular);
 
 		res.status(201).json({success: true, message: 'Ha sido registrado con exito, verifique su email para iniciar sesion'});
 	});	  
 
 	validateUser = asyncHandler(async (req:Request, res:Response) => {
-		try {
-			const {token} = req.params;
-			await this.authApi.validateUser(token);
-			res.render('usuarioValidado');
-		} catch (error) {
-			res.status(500).json({success: false, message: 'hubo un error ' + error});
-		}
+		const {token} = req.params;
+		await this.authApi.validateUser(token);
+
+		res.render('usuarioValidado');
 	});
 
 	login = asyncHandler(async (req:Request, res:Response, next: NextFunction) => {

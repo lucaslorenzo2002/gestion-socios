@@ -33,7 +33,7 @@ app.use(fileUpload({
 }));
 app.use(cookieParser());
 app.use(cors({
-    origin: ['https://laosoft.netlify.app', 'http://localhost:5173'],
+    origin: ['https://laosoft.netlify.app', 'http://localhost:5173', 'http://localhost:4173'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Access-Control-Allow-Origin', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
     credentials: true
@@ -70,6 +70,9 @@ app.use('/api', tiposSocioRouter.start());
 import { ComunicacionRouter } from './routes/comunicacion.js';
 const comunicacionRouter = new ComunicacionRouter();
 app.use('/api', comunicacionRouter.start());
+import { GruposFamiliaresRouter } from './routes/gruposFamiliares.js';
+const gruposFamiliaresRouter = new GruposFamiliaresRouter();
+app.use('/api', gruposFamiliaresRouter.start());
 app.all('*', (req, res, next) => {
     throw new NotFoundError();
 });

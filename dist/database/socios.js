@@ -3,6 +3,8 @@ import { Actividad_Socio } from '../models/actividad_socio.js';
 import { Socio } from '../models/socio.js';
 import logger from '../utils/logger.js';
 import { IncludeOptions } from './includeOptions.js';
+import { Grupo_familiar } from '../models/grupo_familiar.js';
+import { Descuento_grupo_familiar } from '../models/descuento_grupo_familiar.js';
 export class SociosDAO {
     constructor() {
         this.getSocioIncludeOptions = new IncludeOptions;
@@ -411,7 +413,19 @@ export class SociosDAO {
                     attributes: ['socio_id'],
                     include: [{
                             model: Socio,
-                            attributes: ['email', 'estado_socio', 'deuda', 'id']
+                            attributes: ['email', 'estado_socio', 'deuda', 'id', 'grupo_familiar_id'],
+                            include: [
+                                {
+                                    model: Grupo_familiar,
+                                    attributes: ['familiar_titular_id', 'descuento_id', 'id', 'cantidad_de_familiares'],
+                                    include: [
+                                        {
+                                            model: Descuento_grupo_familiar,
+                                            attributes: ['descuento_cuota']
+                                        }
+                                    ]
+                                }
+                            ],
                         }],
                     where: {
                         actividad_id: actividadId,
@@ -428,7 +442,19 @@ export class SociosDAO {
     async filterSociosCuotaByTipoSocio(tipoSocio, club) {
         try {
             return await Socio.findAll({
-                attributes: ['id', 'email', 'estado_socio', 'deuda', 'meses_abonados_cuota_social'],
+                attributes: ['id', 'email', 'estado_socio', 'deuda', 'meses_abonados_cuota_social', 'grupo_familiar_id'],
+                include: [
+                    {
+                        model: Grupo_familiar,
+                        attributes: ['familiar_titular_id', 'descuento_id', 'id', 'cantidad_de_familiares'],
+                        include: [
+                            {
+                                model: Descuento_grupo_familiar,
+                                attributes: ['descuento_cuota']
+                            }
+                        ]
+                    }
+                ],
                 where: {
                     tipo_socio_id: tipoSocio,
                     club_asociado_id: club
@@ -529,6 +555,67 @@ export class SociosDAO {
                 });
             }
             return;
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async asignarSocioAGrupoFamiliar(socioId, grupoFamiliarId, clubAsociadoId) {
+        try {
+            return await Socio.update({ grupo_familiar_id: grupoFamiliarId }, {
+                where: {
+                    id: socioId,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async eliminarSocioDeGrupoFamiliar(id, grupoFamiliarId, clubAsociadoId) {
+        try {
+            return await Socio.update({ grupo_familiar_id: null }, {
+                where: {
+                    id,
+                    grupo_familiar_id: grupoFamiliarId,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getSociosSinGrupoFamiliar(clubAsociadoId) {
+        try {
+            return await Socio.findAll({
+                attributes: ['id', 'nombres', 'apellido'],
+                where: {
+                    grupo_familiar_id: null,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getAllFamiliaresEnGrupoFamiliar(grupoFamiliarId, clubAsociadoId) {
+        try {
+            return await Socio.findAll({
+                attributes: ['id', 'nombres', 'apellido'],
+                include: [
+                    {
+                        model: Grupo_familiar,
+                        attributes: ['familiar_titular_id']
+                    }
+                ],
+                where: {
+                    grupo_familiar_id: grupoFamiliarId,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
         }
         catch (err) {
             logger.info(err);

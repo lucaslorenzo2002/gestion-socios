@@ -5,7 +5,7 @@ import {CategoriaSocio} from './categoriaSocio.js';
 import {TipoSocio} from './tipoSocio.js';
 import {Club} from './club.js';
 import {Actividad} from './actividad.js';
-import { ISocioAttrs } from '../interfaces/ISocioAttrs.js';
+import { Grupo_familiar } from './grupo_familiar.js';
 
 export const Socio = sequelize.define('Socio',{
 	id: {
@@ -114,3 +114,6 @@ Socio.belongsTo(Actividad, {foreignKey: 'actividad_id', as:'activ'});
 
 CategoriaSocio.hasMany(Socio, {foreignKey: 'categoria_id', sourceKey: 'id'});
 Socio.belongsTo(CategoriaSocio, {foreignKey: 'categoria_id', as: 'cat'});
+
+Grupo_familiar.hasMany(Socio, {foreignKey: 'grupo_familiar_id', sourceKey: 'id'});
+Socio.belongsTo(Grupo_familiar, {foreignKey: 'grupo_familiar_id'});

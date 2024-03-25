@@ -34,6 +34,7 @@ export class PagosController{
 			const cantCuotasAPagar = this.aditionalPaymentInformation.get('cuotasAPagar');
 			if(req.query.type === 'payment'){
 				const order = await this.pagosApi.reciveWebhook(req.query['data.id']);	
+				console.log(order.body.payment_method_id, order.body.payment_type_id)
 				for (let i = 0; i < cantCuotasAPagar; i++) {
 					await this.cuotasApi.pagarCuota(
 						paymentMethods(order.body.payment_method_id, order.body.payment_type_id), 

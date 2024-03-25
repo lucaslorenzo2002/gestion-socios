@@ -7,6 +7,7 @@ import cron from 'node-cron';
 import logger from '../utils/logger.js';
 import { ActividadesApi } from './actividades.js';
 import { BadRequestError } from '../errors/bad-request-error.js';
+import { calcularDescuentoPorCuota } from '../utils/calcularDescuentoDeCuota.js';
 
 export class CuotasApi{
 	sociosApi: SociosApi;
@@ -14,6 +15,7 @@ export class CuotasApi{
 	categoriasSocioApi: CategoriasSocioApi;
 	actividadesApi: ActividadesApi;
 	jobsMap: Map<any, any>;
+	deudaGrupoFamiliar: Map<any, any>;
 	constructor(){
 		this.cuotasDAO = new CuotasDAO();
 		this.sociosApi = new SociosApi();
@@ -22,7 +24,6 @@ export class CuotasApi{
 		this.jobsMap = new Map();
 	}
 
-	//Cron job
 	async asignarCuotaASocios(cuotaId, club){
 		try {
 			const cuota:any = await this.cuotasDAO.findCuotaById(cuotaId.dataValues.id);
@@ -42,41 +43,111 @@ export class CuotasApi{
 				sociosTarget = await this.sociosApi.filterSociosCuotaByTipoSocio(cuota.dataValues.tipo_socio_id, club.id);	
 				
 				for (let i = 0; i < sociosTarget.length; i++) {		
-					if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO')
-						if(sociosTarget[i].dataValues.meses_abonados_cuota_social === 0){
-	
-						await this.sociosApi.updateSocioDeuda(sociosTarget[i].dataValues.deuda + cuota.dataValues.monto, sociosTarget[i].dataValues.id, club.id);		
-						let emailTo = sociosTarget[i].dataValues.email;
-						if(emailTo) await sendEmail(from, emailTo, subject, message);				
-						let socioIdString = sociosTarget[i].dataValues.id.toString().slice(-4);
-						this.cuotasDAO.createSocioCuota({id: parseInt(`${cuota.dataValues.id}${socioIdString}`), cuota_id: cuota.dataValues.id, socio_id: sociosTarget[i].dataValues.id});
-					}else{
-						await this.sociosApi.updateSocioMesesAbonadosCuotaSocial(sociosTarget[i].dataValues.meses_abonados_cuota_social-1, club.id, sociosTarget[i].dataValues.id)
+					if(sociosTarget[i].dataValues.estado_socio === 'BAJA'){
+						continue;
 					}
+
+					if(sociosTarget[i].dataValues.meses_abonados_cuota_social > 0){
+						await this.sociosApi.updateSocioMesesAbonadosCuotaSocial(sociosTarget[i].dataValues.meses_abonados_cuota_social-1, club.id, sociosTarget[i].dataValues.id)
+						continue;
+					}
+					
+					if(sociosTarget[i].dataValues.grupo_familiar_id && sociosTarget[i].Grupo_familiar?.familiar_titular_id !== sociosTarget[i].dataValues.id){
+						let socioIdString = sociosTarget[i].dataValues.id.toString().slice(-4);
+						console.log(sociosTarget[i])
+						this.cuotasDAO.createSocioCuota(
+							{
+								id: parseInt(`${cuota.dataValues.id}${socioIdString}`), 
+								cuota_id: cuota.dataValues.id, 
+								socio_id: sociosTarget[i].dataValues.id,
+								estado: 'PENDIENTE',
+								monto: cuota.dataValues.monto - (cuota.dataValues.monto * sociosTarget[i].Grupo_familiar.Descuento_grupo_familiar.descuento_cuota / 100),
+							});
+							
+						await this.sociosApi.updateSocioDeuda(
+							sociosTarget[i].dataValues.deuda + (
+								cuota.dataValues.monto - (cuota.dataValues.monto * sociosTarget[i].Grupo_familiar.Descuento_grupo_familiar.descuento_cuota / 100)
+								),
+								sociosTarget[i].Grupo_familiar?.familiar_titular_id, 
+							club.id
+							);		
+						continue;	
+					}
+							
+					let descuento = sociosTarget[i].Grupo_familiar?.dataValues.Descuento_grupo_familiar.descuento_cuota || 0;
+					await this.sociosApi.updateSocioDeuda(
+						sociosTarget[i].dataValues.deuda + (
+							cuota.dataValues.monto - (cuota.dataValues.monto * descuento / 100)
+							),
+						sociosTarget[i].dataValues.id, 
+						club.id
+						);	
+
+					/* let emailTo = sociosTarget[i].dataValues.email;
+					if(emailTo) await sendEmail(from, emailTo, subject, message); */			
+					let socioIdString = sociosTarget[i].dataValues.id.toString().slice(-4);
+					this.cuotasDAO.createSocioCuota({
+						id: parseInt(`${cuota.dataValues.id}${socioIdString}`), 
+						cuota_id: cuota.dataValues.id, 
+						socio_id: sociosTarget[i].dataValues.id, 
+						estado: 'PENDIENTE',
+						monto: cuota.dataValues.monto - (cuota.dataValues.monto * descuento / 100)
+					});
 				}
 			}else{
 				const socios:any = await this.sociosApi.filterSociosCuotaByActividad(cuota.dataValues.actividad_id, cuota.dataValues.categoria_id, club.id);
 				sociosTarget = socios.map((socio) => socio.dataValues.Socio);
 				let actividadSocio;
 
-				for (let i = 0; i < sociosTarget.length; i++) {		
-					if(sociosTarget[i].dataValues.estado_socio === 'ACTIVO')
-						actividadSocio = await this.actividadesApi.getActividadSocio(sociosTarget[i].dataValues.id, cuota.dataValues.actividad_id, club.id);
-						if(actividadSocio.dataValues.meses_abonados_cuota_deporte === 0){
-	
-						await this.sociosApi.updateSocioDeuda(sociosTarget[i].dataValues.deuda + cuota.dataValues.monto, sociosTarget[i].dataValues.id, club.id);		
-						let emailTo = sociosTarget[i].dataValues.email;
-						if(emailTo) await sendEmail(from, emailTo, subject, message);				
-						let socioIdString = sociosTarget[i].dataValues.id.toString().slice(-4);
-						console.log(parseInt(`${cuota.dataValues.id}${socioIdString}`))
-						this.cuotasDAO.createSocioCuota({id: parseInt(`${cuota.dataValues.id}${socioIdString}`), cuota_id: cuota.dataValues.id, socio_id: sociosTarget[i].dataValues.id});
-					}else{
-						await this.actividadesApi.updateSocioMesesAbonadosCuotaDeportiva(actividadSocio.dataValues.meses_abonados_cuota_deporte-1, sociosTarget[i].dataValues.id, cuota.dataValues.actividad_id, club.id);
+				for (let i = 0; i < sociosTarget.length; i++) {	
+					if(sociosTarget[i].dataValues.estado_socio === 'BAJA'){
+						continue;
 					}
+
+					actividadSocio = await this.actividadesApi.getActividadSocio(sociosTarget[i].dataValues.id, cuota.dataValues.actividad_id, club.id);
+					if(actividadSocio.dataValues.meses_abonados_cuota_deporte > 0){
+						await this.actividadesApi.updateSocioMesesAbonadosCuotaDeportiva(actividadSocio.dataValues.meses_abonados_cuota_deporte-1, sociosTarget[i].dataValues.id, cuota.dataValues.actividad_id, club.id);
+						continue;
+					}
+
+					if(sociosTarget[i].dataValues.grupo_familiar_id && sociosTarget[i].Grupo_familiar.familiar_titular_id !== sociosTarget[i].dataValues.id){
+						let socioIdString = sociosTarget[i].dataValues.id.toString().slice(-4);
+						this.cuotasDAO.createSocioCuota(
+							{
+								id: parseInt(`${cuota.dataValues.id}${socioIdString}`), 
+								cuota_id: cuota.dataValues.id, 
+								socio_id: sociosTarget[i].dataValues.id,
+								estado: 'PENDIENTE',
+								monto: cuota.dataValues.monto
+							});
+						await this.sociosApi.updateSocioDeuda(
+							sociosTarget[i].dataValues.deuda + cuota.dataValues.monto,
+							sociosTarget[i].dataValues.id, 
+							club.id
+							);		
+						continue;	
+					}
+
+					await this.sociosApi.updateSocioDeuda(
+						sociosTarget[i].dataValues.deuda + cuota.dataValues.monto, 
+						sociosTarget[i].dataValues.id, 
+						club.id
+						);		
+					let emailTo = sociosTarget[i].dataValues.email;
+					if(emailTo) await sendEmail(from, emailTo, subject, message);				
+					let socioIdString = sociosTarget[i].dataValues.id.toString().slice(-4);
+					this.cuotasDAO.createSocioCuota({
+						id: parseInt(`${cuota.dataValues.id}${socioIdString}`), 
+						cuota_id: cuota.dataValues.id, 
+						socio_id: sociosTarget[i].dataValues.id, 
+						estado: 'PENDIENTE',
+						monto: cuota.dataValues.monto
+					});
+					
 				}				
 			}
 		} catch (err) {
-			console.log(err.message);
+			throw new BadRequestError(err.message);
 		}
 	}
 
@@ -198,7 +269,7 @@ export class CuotasApi{
 				}
 				
 				//enviar notificacion al admin
-				return job;
+				return job; 
 			} catch (error) {
 				console.error('Error en el cron job:', error.message);
 			}
@@ -206,23 +277,24 @@ export class CuotasApi{
 	}
 
 	async getAllCuotas(clubAsociado: number){
+		//redis 
 		return await this.cuotasDAO.getAllCuotas(clubAsociado);
 	}
 
-	async totalCuotasPendientes(socioId){
-		return await this.cuotasDAO.totalCuotasPendientes(socioId)
+	async totalCuotasPendientes(socioId: number, clubAsociadoId: number){
+		return await this.cuotasDAO.totalCuotasPendientes(socioId, clubAsociadoId)
 	}
 
-	async getMisCuotasPendientes(socioId: number){
-		return await this.cuotasDAO.getMisCuotasPendientes(socioId);
+	async getMisCuotasPendientes(socioId: number, clubAsociadoId: number){
+		return await this.cuotasDAO.getMisCuotasPendientes(socioId, clubAsociadoId);
 	}
 
-	async getMisCuotasPagas(socioId: number){
-		return await this.cuotasDAO.getMisCuotasPagas(socioId);
+	async getMisCuotasPagas(socioId: number, clubAsociadoId: number){
+		return await this.cuotasDAO.getMisCuotasPagas(socioId, clubAsociadoId);
 	}
 
-	async getAllCuotasSocio(socioId: number){
-		return await this.cuotasDAO.getAllCuotasSocio(socioId);
+	async getAllCuotasSocio(socioId: number, clubAsociadoId: number){
+		return await this.cuotasDAO.getAllCuotasSocio(socioId, clubAsociadoId);
 	}
 
 	//mandar al servicio de pagos
@@ -316,8 +388,7 @@ export class CuotasApi{
 		return await this.cuotasDAO.actualizarValorDeCuota(club, tipoSocioId, actividadId, categoriaId, monto);
 	}
 
-	async getLast3CuotasPagas(socioId: number){
-		return await this.cuotasDAO.getLast3CuotasPagas(socioId);
+	async getLast3CuotasPagas(socioId: number, clubAsociadoId: number){
+		return await this.cuotasDAO.getLast3CuotasPagas(socioId, clubAsociadoId);
 	}
-	//FEATURE ENVIAR MAIL PERSONALIZADO
 }

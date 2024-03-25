@@ -24,6 +24,7 @@ export class PagosController {
                 const cantCuotasAPagar = this.aditionalPaymentInformation.get('cuotasAPagar');
                 if (req.query.type === 'payment') {
                     const order = await this.pagosApi.reciveWebhook(req.query['data.id']);
+                    console.log(order.body.payment_method_id, order.body.payment_type_id);
                     for (let i = 0; i < cantCuotasAPagar; i++) {
                         await this.cuotasApi.pagarCuota(paymentMethods(order.body.payment_method_id, order.body.payment_type_id), this.aditionalPaymentInformation.get('socioDeuda'), this.aditionalPaymentInformation.get('socioId'), order.body.additional_info.items[i].id, this.aditionalPaymentInformation.get('clubAsociado'), order.body.additional_info.items[i].category_id, order.body.additional_info.items[i].quantity);
                     }

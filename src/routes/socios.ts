@@ -27,6 +27,8 @@ export class SociosRouter{
 		//sociosRouter.post('/actualizaractividadessocio', adminAuthMiddleware, this.controller.actualizarActividadesSocio);
 		sociosRouter.post('/filtrarsocios', adminAuthMiddleware, this.controller.filterSocios);
 		sociosRouter.get('/sociosemail', adminAuthMiddleware, this.controller.getAllSociosWithEmail);
+		sociosRouter.get('/sociossingrupofamiliar', adminAuthMiddleware, this.controller.getAllSociosSinGrupoFamiliar);
+		sociosRouter.get('/familiaresengrupo/:grupofamiliarid', adminAuthMiddleware, this.controller.getAllFamiliaresEnGrupoFamiliar);
 		
 		return sociosRouter;
 	}

@@ -8,7 +8,7 @@ export default async(req: Request, res: Response, next: NextFunction) => {
 	const {token} = req.cookies;
 	if(token){
 		try {
-			const decoded = jwt.verify(token, 'adsfdcsfeds3w423ewdas') as jwt.JwtPayload;
+			const decoded = jwt.verify(token, 'adsfdcsfeds3w423ewdas') as jwt.JwtPayload; 
 			req.user = await sociosDAO.getSocioById(decoded.id);
 			next();
 		} catch (err) {

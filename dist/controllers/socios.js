@@ -137,6 +137,17 @@ export class SociosController {
             const sociosFiltrados = await this.sociosApi.getAllSociosWithEmail(club_asociado.id);
             res.status(201).json({ success: true, data: sociosFiltrados });
         });
+        this.getAllSociosSinGrupoFamiliar = asyncHandler(async (req, res) => {
+            const { club_asociado } = req.user;
+            const socios = await this.sociosApi.getAllSociosSinGrupoFamiliar(club_asociado.id);
+            res.status(201).json({ success: true, data: socios });
+        });
+        this.getAllFamiliaresEnGrupoFamiliar = asyncHandler(async (req, res) => {
+            const { club_asociado } = req.user;
+            const { grupofamiliarid } = req.params;
+            const familiares = await this.sociosApi.getAllFamiliaresEnGrupoFamiliar(grupofamiliarid, club_asociado.id);
+            res.status(201).json({ success: true, data: familiares });
+        });
         this.sociosApi = new SociosApi();
     }
 }

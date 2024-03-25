@@ -75,7 +75,9 @@ export class AuthApi{
 	}
  
 	async validateUser(tokenParam: string){
+		console.log(tokenParam)
 		const token = await this.TokenDAO.findOneTokenByToken(tokenParam);
+		console.log(token)
 		await this.sociosDAO.activateSocio(token.dataValues.socio_id);
 	}
 
@@ -100,7 +102,7 @@ export class AuthApi{
 		let message = `
         <h2>PORFAVOR NO RESPONDER ESTE MENSAJE</h2>
         <h3>Estimado Socio:</h3>
-        <p>haga en click en la url proporcionada para cambiar su contrasenia</p>
+        <p>haga en click en la url proporcionada para cambiar su contraseña</p>
         <p>el link es valido por una hora</p> 
         <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
         <p>Saludos...</p> `;
@@ -109,13 +111,15 @@ export class AuthApi{
 
 		let to = socio.dataValues.email;
 
-		let subject = 'Cambiar contrasenia';
+		let subject = 'Cambiar contraseña';
 
 		await sendEmail(from, to, subject, message); 
 	}
 
 	async resetPassword(tokenParam: string, newPassword: string, confirmNewPassword: string){
 		const token = await this.TokenDAO.findOneTokenByToken(tokenParam);
+		console.log(token)
+
 		await this.sociosDAO.updateSocioPassword(token.dataValues.socio_id, hash(newPassword));
 	}
 

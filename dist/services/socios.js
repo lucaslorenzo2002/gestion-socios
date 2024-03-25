@@ -86,5 +86,17 @@ export class SociosApi {
     async getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado) {
         return await this.sociosDAO.getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado);
     }
+    async asignarSocioAGrupoFamiliar(socioId, grupoFamiliarId, clubAsociadoId) {
+        return await this.sociosDAO.asignarSocioAGrupoFamiliar(socioId, grupoFamiliarId, clubAsociadoId);
+    }
+    async eliminarSocioDeGrupoFamiliar(id, grupoFamiliarId, clubAsociadoId) {
+        return await this.sociosDAO.eliminarSocioDeGrupoFamiliar(id, grupoFamiliarId, clubAsociadoId);
+    }
+    async getAllSociosSinGrupoFamiliar(clubAsociadoId) {
+        return await this.sociosDAO.getSociosSinGrupoFamiliar(clubAsociadoId);
+    }
+    async getAllFamiliaresEnGrupoFamiliar(grupoFamiliarId, clubAsociadoId) {
+        return await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(grupoFamiliarId, clubAsociadoId);
+    }
 }
 //# sourceMappingURL=socios.js.map

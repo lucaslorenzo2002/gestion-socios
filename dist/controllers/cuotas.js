@@ -10,58 +10,37 @@ export class CuotasController {
             res.status(201).json({ success: true, data: nuevaCuota });
         });
         this.getMisCuotasPendientes = asyncHandler(async (req, res) => {
-            try {
-                const cuotas = await this.cuotasApi.getMisCuotasPendientes(req.user.id);
-                res.status(201).json({ success: true, data: cuotas });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
-            }
+            const { club_asociado_id, id } = req.user;
+            const cuotas = await this.cuotasApi.getMisCuotasPendientes(id, club_asociado_id);
+            res.status(201).json({ success: true, data: cuotas });
         });
         this.getMisCuotasPagas = asyncHandler(async (req, res) => {
-            try {
-                const cuotas = await this.cuotasApi.getMisCuotasPagas(req.user.id);
-                res.status(201).json({ success: true, data: cuotas });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
-            }
+            const { id, club_asociado_id } = req.user;
+            const cuotas = await this.cuotasApi.getMisCuotasPagas(id, club_asociado_id);
+            res.status(201).json({ success: true, data: cuotas });
         });
         this.totalCuotasPendientes = asyncHandler(async (req, res) => {
-            try {
-                const total = await this.cuotasApi.totalCuotasPendientes(req.params.socioid);
-                res.status(201).json({ success: true, data: total });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
-            }
+            const { club_asociado_id } = req.user;
+            const { socioid } = req.params;
+            const total = await this.cuotasApi.totalCuotasPendientes(socioid, club_asociado_id);
+            res.status(201).json({ success: true, data: total });
         });
         this.getLast3CuotasPagas = asyncHandler(async (req, res) => {
-            try {
-                const cuotas = await this.cuotasApi.getLast3CuotasPagas(req.user.id);
-                res.status(201).json({ success: true, data: cuotas });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
-            }
+            const { id, club_asociado_id } = req.user;
+            const cuotas = await this.cuotasApi.getLast3CuotasPagas(id, club_asociado_id);
+            res.status(201).json({ success: true, data: cuotas });
         });
         this.getLast3CuotasPagasAdmin = asyncHandler(async (req, res) => {
-            try {
-                const cuotas = await this.cuotasApi.getLast3CuotasPagas(req.params.socioid);
-                res.status(201).json({ success: true, data: cuotas });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
-            }
+            const { socioid } = req.params;
+            const { club_asociado_id } = req.user;
+            const cuotas = await this.cuotasApi.getLast3CuotasPagas(socioid, club_asociado_id);
+            res.status(201).json({ success: true, data: cuotas });
         });
         this.getCuotasSocio = asyncHandler(async (req, res) => {
-            try {
-                const cuotas = await this.cuotasApi.getAllCuotasSocio(parseInt(req.params.id));
-                res.status(201).json({ success: true, data: cuotas });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: 'hubo un error ' + err.message });
-            }
+            const { id } = req.params;
+            const { club_asociado } = req.user;
+            const cuotas = await this.cuotasApi.getAllCuotasSocio(parseInt(id), club_asociado.id);
+            res.status(201).json({ success: true, data: cuotas });
         });
         this.getAllCuotas = asyncHandler(async (req, res) => {
             try {
