@@ -1,4 +1,3 @@
-import { client } from "../config/redisConfig.js";
 import { GruposFamiliaresDAO } from "../database/gruposFamiliares.js";
 import { BadRequestError } from "../errors/bad-request-error.js";
 import { SociosApi } from "./socios.js";
@@ -21,13 +20,18 @@ export class GruposFamiliaresApi {
         }
     }
     async getGruposFamiliares(clubAsociadoId) {
-        const cachedResponse = await client.get('gruposFamiliares');
-        if (cachedResponse) {
+        /* const cachedResponse = await client.get('gruposFamiliares');
+
+        if(cachedResponse){
             return JSON.parse(cachedResponse);
         }
+        
         const response = await this.gruposFamiliaresDAO.getGruposFamiliares(clubAsociadoId);
+
         await client.set('gruposFamiliares', JSON.stringify(response));
-        return response;
+        
+        return response */
+        return await this.gruposFamiliaresDAO.getGruposFamiliares(clubAsociadoId);
     }
     async eliminarGrupoFamiliar(id, clubAsociadoId) {
         const familiaresEnGrupo = await this.sociosApi.getAllFamiliaresEnGrupoFamiliar(id, clubAsociadoId);
@@ -44,13 +48,18 @@ export class GruposFamiliaresApi {
         return await this.gruposFamiliaresDAO.crearDescuentoGrupoFamiliar(descuentoCuota, cantidadDeFamiliares, clubAsociadoId);
     }
     async getDescuentosGrupoFamiliar(clubAsociadoId) {
-        const cachedResponse = await client.get('descuentosGruposFamiliares');
-        if (cachedResponse) {
+        /* const cachedResponse = await client.get('descuentosGruposFamiliares');
+
+        if(cachedResponse){
             return JSON.parse(cachedResponse);
         }
+        
         const response = await this.gruposFamiliaresDAO.getDescuentosGrupoFamiliar(clubAsociadoId);
+
         await client.set('descuentosGruposFamiliares', JSON.stringify(response));
-        return response;
+        
+        return response */
+        return await this.gruposFamiliaresDAO.getDescuentosGrupoFamiliar(clubAsociadoId);
     }
     async actualizarTitularFamilia(familiarTitularId, id, clubAsociadoId) {
         return await this.gruposFamiliaresDAO.actualizarTitularFamilia(familiarTitularId, id, clubAsociadoId);

@@ -32,12 +32,11 @@ async function server() {
             logger.info(err.message);
         });
         client.on('error', err => logger.info('Redis Client Error', err.message));
-        await client.connect().then(() => {
+        /* await client.connect().then(() => {
             logger.info('Redis successfuly running');
-        }).catch((err) => {
+        }).catch((err: Error) => {
             logger.info(err.message);
-        });
-        ;
+        });; */
         const PORT = process.env.PORT || 4000;
         const server = httpServer.listen(PORT, () => {
             logger.info(`App listening on port ${PORT}`);

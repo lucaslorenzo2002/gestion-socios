@@ -38,11 +38,11 @@ async function server (){
 
 		client.on('error', err => logger.info('Redis Client Error', err.message));
 
-		await client.connect().then(() => {
+		/* await client.connect().then(() => {
 			logger.info('Redis successfuly running');
 		}).catch((err: Error) => {
 			logger.info(err.message);
-		});;
+		});; */
 
 		const PORT = process.env.PORT || 4000;
 

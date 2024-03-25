@@ -35,7 +35,7 @@ export class GruposFamiliaresApi{
 	}
 
     async getGruposFamiliares(clubAsociadoId: number){
-        const cachedResponse = await client.get('gruposFamiliares');
+        /* const cachedResponse = await client.get('gruposFamiliares');
 
         if(cachedResponse){
             return JSON.parse(cachedResponse);
@@ -45,7 +45,8 @@ export class GruposFamiliaresApi{
 
         await client.set('gruposFamiliares', JSON.stringify(response));
         
-        return response
+        return response */
+        return await this.gruposFamiliaresDAO.getGruposFamiliares(clubAsociadoId);
     }
 
     async eliminarGrupoFamiliar(id: number, clubAsociadoId: number){
@@ -69,7 +70,7 @@ export class GruposFamiliaresApi{
     }
 
     async getDescuentosGrupoFamiliar(clubAsociadoId: number){
-        const cachedResponse = await client.get('descuentosGruposFamiliares');
+        /* const cachedResponse = await client.get('descuentosGruposFamiliares');
 
         if(cachedResponse){
             return JSON.parse(cachedResponse);
@@ -79,7 +80,8 @@ export class GruposFamiliaresApi{
 
         await client.set('descuentosGruposFamiliares', JSON.stringify(response));
         
-        return response
+        return response */
+        return await this.gruposFamiliaresDAO.getDescuentosGrupoFamiliar(clubAsociadoId);
     }
 
     async actualizarTitularFamilia(familiarTitularId: number, id: number, clubAsociadoId: number){
