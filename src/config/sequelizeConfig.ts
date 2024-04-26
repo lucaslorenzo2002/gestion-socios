@@ -7,6 +7,18 @@ dotenv.config();
 let sequelizeInstance: any;
 
 switch (process.env.NODE_ENV) {
+	case 'staging':
+		sequelizeInstance = new Sequelize(process.env.STAGING_DB_CONNECTION_STRING, {
+			dialectModule: pg,
+			dialect:  'postgres',
+			logging: false,
+			dialectOptions: {
+				ssl: {
+					require: true,
+					rejectUnauthorized: false,
+				},
+			},
+		}); 
 	case 'development':
 		sequelizeInstance = new Sequelize('gestion-socios-club-dev', 'postgres', 'Marruecos02',{
 			dialectModule: pg,
