@@ -1,10 +1,22 @@
+import { CuotasDAO } from '../database/cuotas.js';
 import { SociosDAO } from '../database/socios.js';
+import { transaccionesEnum } from '../enums/transacciones.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
 import { uploadFile } from '../utils/awsS3.js';
+import { InscripcionesApi } from './inscripciones.js';
+import { TransaccionesApi } from './transacciones.js';
 export class SociosApi {
     constructor() {
         this.sociosDAO = new SociosDAO();
+        this.inscripcionesApi = new InscripcionesApi();
+        this.transaccionesApi = new TransaccionesApi();
+        this.cuotasDAO = new CuotasDAO();
     }
     async createSocio(id, nombres, apellido, clubAsociado, fotoFile, fotoFileName, fotoUrl, socioDesde) {
+        const socio = await this.sociosDAO.getSocioById(id);
+        if (socio) {
+            throw new BadRequestError('El dni ya ha sido registrado');
+        }
         if (fotoFile && fotoFileName && fotoUrl) {
             await uploadFile(fotoFile, fotoFileName);
         }
@@ -21,7 +33,7 @@ export class SociosApi {
         return await this.sociosDAO.getSocioById(id);
     }
     async getSocioDeuda(id) {
-        return await this.sociosDAO.getSocioDeuda(id);
+        return await this.sociosDAO.getDeudaSocio(id);
     }
     async getAllSocios(clubAsociado) {
         return await this.sociosDAO.getAllSocios(clubAsociado);
@@ -31,9 +43,6 @@ export class SociosApi {
     }
     async getAllSociosEnTipoSocio(clubAsociado, tipoSocio) {
         return await this.sociosDAO.getAllSociosEnTipoSocio(clubAsociado, tipoSocio);
-    }
-    async updateSocioDeuda(deuda, socioId, clubAsociado) {
-        return await this.sociosDAO.updateSocioDeuda(deuda, socioId, clubAsociado);
     }
     async darDeBaja(id) {
         return await this.sociosDAO.darDeBaja(id);
@@ -58,18 +67,58 @@ export class SociosApi {
         }
         return await this.sociosDAO.updateSocioData(fecNacimiento, edad, telefonoCelular, codigoPostal, direccion, ciudad, provincia, poseeObraSocial, siglas, rnos, numeroDeAfiliados, denominacionDeObraSocial, Math.floor(42 + porcentajeCamposCompletados) > 100 ? 100 : Math.floor(42 + porcentajeCamposCompletados), id);
     }
-    async eliminarSocioDeTipoDeSocio(ids, tipoSocioId, clubAsociado) {
+    async eliminarSocioDeTipoDeSocio(ids, tipoSocioId, clubAsociadoId) {
+        const inscripcionProgramada = await this.inscripcionesApi.findInscripcionProgramada(tipoSocioId, null, clubAsociadoId);
+        if (inscripcionProgramada) {
+            for (const id of ids) {
+                await this.sociosDAO.sinCuotaInscripcion(id, clubAsociadoId);
+            }
+        }
         for (const id of ids) {
-            await this.sociosDAO.eliminarSocioDeTipoDeSocio(id, tipoSocioId, clubAsociado);
+            await this.sociosDAO.eliminarSocioDeTipoDeSocio(id, tipoSocioId, clubAsociadoId);
         }
     }
-    async agregarSocioATipoDeSocio(ids, tipoSocioId, clubAsociado) {
+    async asignarInscripcionSocial(ids, tipoSocioId, clubAsociadoId) {
+        const inscripcionProgramada = await this.inscripcionesApi.findInscripcionProgramada(tipoSocioId, null, clubAsociadoId);
+        if (inscripcionProgramada) {
+            const detalles = {
+                detalle: 'Debe la cuota de inscripcion',
+                tipoSocioId
+            };
+            for (const id of ids) {
+                await this.sociosDAO.cuotaInscripcionPendiente(id, clubAsociadoId);
+                await this.inscripcionesApi.cobrarInscripcionASocio(id, inscripcionProgramada.dataValues, clubAsociadoId);
+                await this.transaccionesApi.iniciarTransaccion(id, transaccionesEnum.inscripcionSocial, JSON.stringify(detalles), clubAsociadoId);
+            }
+            return;
+        }
+        return await this.agregarSocioATipoDeSocio(ids, tipoSocioId, clubAsociadoId);
+    }
+    async agregarSocioATipoDeSocio(ids, tipoSocioId, clubAsociadoId) {
         for (const id of ids) {
-            await this.sociosDAO.agregarSocioATipoDeSocio(id, tipoSocioId, clubAsociado);
+            await this.sociosDAO.agregarSocioATipoDeSocio(id, tipoSocioId, clubAsociadoId);
         }
     }
-    async filterSocios(tipoSocio, categoria, actividades, club) {
-        return await this.sociosDAO.filterSocios(tipoSocio, categoria, actividades, club);
+    async eliminarSociosDePendiente(ids, tipoSocioId, actividadId, categoriaId, clubAsociadoId) {
+        try {
+            for (const id of ids) {
+                let transaccion;
+                if (tipoSocioId) {
+                    transaccion = await this.transaccionesApi.getTransaccionSocioByMotivo(transaccionesEnum.inscripcionSocial, id, null, null, clubAsociadoId);
+                    await this.sociosDAO.sinCuotaInscripcion(id, clubAsociadoId);
+                }
+                else {
+                    transaccion = await this.transaccionesApi.getTransaccionSocioByMotivo(transaccionesEnum.inscripcionDeportiva, id, actividadId, categoriaId, clubAsociadoId);
+                }
+                await this.transaccionesApi.eliminarTransaccion(transaccion.dataValues.id);
+                const inscripcion = await this.inscripcionesApi.findInscripcionProgramada(tipoSocioId, actividadId, clubAsociadoId);
+                const socioCuota = await this.cuotasDAO.getSocioCuotaInscripcion(inscripcion.dataValues.id, id);
+                await this.cuotasDAO.eliminarSocioCuota(socioCuota.dataValues.id);
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
     async filterSociosCuotaByActividad(actividad, categoria, club) {
         return await this.sociosDAO.filterSociosCuotaByActividad(actividad, categoria, club);
@@ -83,8 +132,8 @@ export class SociosApi {
     async getAllSociosWithEmail(clubAsociado) {
         return await this.sociosDAO.getAllSociosWithEmail(clubAsociado);
     }
-    async getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado) {
-        return await this.sociosDAO.getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, clubAsociado);
+    async getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, categoriasId, clubAsociado) {
+        return await this.sociosDAO.getAllSociosWithEmailInActividadOrTipoSocio(actividadId, tipoSocio, categoriasId, clubAsociado);
     }
     async asignarSocioAGrupoFamiliar(socioId, grupoFamiliarId, clubAsociadoId) {
         return await this.sociosDAO.asignarSocioAGrupoFamiliar(socioId, grupoFamiliarId, clubAsociadoId);
@@ -97,6 +146,12 @@ export class SociosApi {
     }
     async getAllFamiliaresEnGrupoFamiliar(grupoFamiliarId, clubAsociadoId) {
         return await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(grupoFamiliarId, clubAsociadoId);
+    }
+    async adherirSocioAlDebitoAutomatico(id, clubAsociadoId) {
+        return await this.sociosDAO.adherirSocioAlDebitoAutomatico(id, clubAsociadoId);
+    }
+    async getAllSociosEnDebitoAutomatico(clubAsociadoId) {
+        return await this.sociosDAO.getAllSociosEnDebitoAutomatico(clubAsociadoId);
     }
 }
 //# sourceMappingURL=socios.js.map

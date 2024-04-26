@@ -19,7 +19,7 @@ export const Grupo_familiar = sequelize.define('Grupo_familiar',{
 		allowNull: false
 	},
 	familiar_titular_id:{
-		type: DataTypes.TEXT,
+		type: DataTypes.INTEGER,
 		allowNull: false
 	}
 }, {

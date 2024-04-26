@@ -14,6 +14,7 @@ export class GruposFamiliaresRouter{
 		gruposFamiliaresRouter.get('/eliminargrupofamiliar/:grupofamiliarid', adminAuth, this.controller.eliminarGrupoFamiliar);
 		gruposFamiliaresRouter.post('/descuentogrupofamiliar', adminAuth, this.controller.crearDescuentoGrupoFamiliar);
 		gruposFamiliaresRouter.get('/descuentosgrupofamiliar', adminAuth, this.controller.getDescuentosGrupoFamiliar);
+		gruposFamiliaresRouter.get('/eliminardescuentogrupofamiliar/:descuentogrupofamiliarid', adminAuth, this.controller.eliminarDescuentoGrupoFamiliar);
 		gruposFamiliaresRouter.post('/actualizartitular/:id', adminAuth, this.controller.actualizarTitularFamilia);
 		
 		return gruposFamiliaresRouter;

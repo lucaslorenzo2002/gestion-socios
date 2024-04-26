@@ -25,10 +25,11 @@ export class ComunicacionController{
 	});	  
 
 	enviarMailsMasivos = asyncHandler(async(req: any, res: Response) => {
-        const {actividadId, tipoDeSocioId, message, subject} = req.body;
+        const {actividadId, tipoDeSocioId, categoriasId, message, subject} = req.body;
+		console.log(actividadId, tipoDeSocioId)
         const {club_asociado} = req.user;
 
-        await this.comunicacionApi.enviarMailsMasivos(message, subject, actividadId, tipoDeSocioId, club_asociado.id);
+        await this.comunicacionApi.enviarMailsMasivos(message, subject, actividadId, tipoDeSocioId, categoriasId|| [], club_asociado.id);
         
         res.status(201).json({success: true, message: 'Los mails han sido enviados correctamente'});
 	});	  

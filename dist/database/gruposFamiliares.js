@@ -1,5 +1,6 @@
 import { Descuento_grupo_familiar } from '../models/descuento_grupo_familiar.js';
 import { Grupo_familiar } from '../models/grupo_familiar.js';
+import { Socio } from '../models/socio.js';
 import logger from '../utils/logger.js';
 export class GruposFamiliaresDAO {
     async crearGrupoFamiliar(apellidoTitular, descuentoId, cantidadDeFamiliares, familiarTitularId, clubAsociadoId) {
@@ -19,6 +20,7 @@ export class GruposFamiliaresDAO {
     async getGruposFamiliares(clubAsociadoId) {
         try {
             return await Grupo_familiar.findAll({
+                order: [['createdAt', 'DESC']],
                 include: [
                     {
                         model: Descuento_grupo_familiar,
@@ -26,6 +28,37 @@ export class GruposFamiliaresDAO {
                     }
                 ],
                 where: {
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getGrupoFamiliarById(id) {
+        try {
+            return await Grupo_familiar.findOne({
+                include: [
+                    {
+                        model: Descuento_grupo_familiar,
+                        attributes: ['descuento_cuota']
+                    }
+                ],
+                where: {
+                    id
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getGruposFamiliaresByCantidad(cantidadDeFamiliares, clubAsociadoId) {
+        try {
+            return await Grupo_familiar.findAll({
+                where: {
+                    cantidad_de_familiares: cantidadDeFamiliares,
                     club_asociado_id: clubAsociadoId
                 }
             });
@@ -84,11 +117,57 @@ export class GruposFamiliaresDAO {
             logger.info(err);
         }
     }
+    async eliminarDescuentoGrupoFamiliar(descuentoGrupoFamiliarId, clubAsociadoId) {
+        try {
+            await Grupo_familiar.update({ descuento_id: null }, {
+                where: {
+                    descuento_id: descuentoGrupoFamiliarId,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+            return await Descuento_grupo_familiar.destroy({
+                where: {
+                    id: descuentoGrupoFamiliarId,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (error) {
+            logger.info(error);
+        }
+    }
+    async asignarDescuentoAGrupoFamiliar(id, descuentoId, clubAsociadoId) {
+        try {
+            return await Grupo_familiar.update({ descuento_id: descuentoId }, {
+                where: {
+                    id,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
     async actualizarTitularFamilia(familiarTitularId, id, clubAsociadoId) {
         try {
             return await Grupo_familiar.update({ familiar_titular_id: familiarTitularId }, {
                 where: {
                     id,
+                    club_asociado_id: clubAsociadoId
+                }
+            });
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
+    async getTitularFamiliaById(id, grupoFamiliarId, clubAsociadoId) {
+        try {
+            return await Socio.findOne({
+                where: {
+                    id,
+                    grupo_familiar_id: grupoFamiliarId,
                     club_asociado_id: clubAsociadoId
                 }
             });

@@ -17,6 +17,10 @@ export class GruposFamiliaresApi{
         familiarTitularId: number, 
         clubAsociadoId: number
         ){
+            if(!apellidoTitular){
+                throw new BadRequestError('Debe asignar el apellido del titular al grupo');
+            }
+
             if(sociosId.length <= 1){
                 throw new BadRequestError('Los grupos familiares deben tener al menos 2 socios');
             }
@@ -27,11 +31,12 @@ export class GruposFamiliaresApi{
             
             const descuento = await this.gruposFamiliaresDAO.getDescuentoGrupoFamiliar(sociosId.length, clubAsociadoId);
 
-            const grupoFamiliar = await this.gruposFamiliaresDAO.crearGrupoFamiliar(apellidoTitular, descuento.dataValues.id, sociosId.length, familiarTitularId, clubAsociadoId);
-
+            const grupoFamiliar = await this.gruposFamiliaresDAO.crearGrupoFamiliar(apellidoTitular, descuento?.dataValues.id || null, sociosId.length, familiarTitularId, clubAsociadoId);
+            
             for (const socioId of sociosId) {
                 await this.sociosApi.asignarSocioAGrupoFamiliar(socioId, grupoFamiliar.dataValues.id, clubAsociadoId);
             }
+
 	}
 
     async getGruposFamiliares(clubAsociadoId: number){
@@ -66,7 +71,14 @@ export class GruposFamiliaresApi{
             throw new BadRequestError(`Ya existe un descuento para los grupos familiares de ${cantidadDeFamiliares} personas`)
         }
         
-        return await this.gruposFamiliaresDAO.crearDescuentoGrupoFamiliar(descuentoCuota, cantidadDeFamiliares, clubAsociadoId)
+        const familiares = await this.gruposFamiliaresDAO.getGruposFamiliaresByCantidad(cantidadDeFamiliares, clubAsociadoId);
+        const descuento = await this.gruposFamiliaresDAO.crearDescuentoGrupoFamiliar(descuentoCuota, cantidadDeFamiliares, clubAsociadoId);
+
+        if(familiares.length > 0){
+            for (let i = 0; i < familiares.length; i++) {
+                await this.gruposFamiliaresDAO.asignarDescuentoAGrupoFamiliar(familiares[i].dataValues.id, descuento.dataValues.id, clubAsociadoId)
+            }
+        }
     }
 
     async getDescuentosGrupoFamiliar(clubAsociadoId: number){
@@ -84,7 +96,19 @@ export class GruposFamiliaresApi{
         return await this.gruposFamiliaresDAO.getDescuentosGrupoFamiliar(clubAsociadoId);
     }
 
+    async eliminarDescuentoGrupoFamiliar(descuentoGrupoFamiliarId: number, clubAsociadoId: number){
+        return await this.gruposFamiliaresDAO.eliminarDescuentoGrupoFamiliar(descuentoGrupoFamiliarId, clubAsociadoId)
+    }
+
     async actualizarTitularFamilia(familiarTitularId: number, id: number, clubAsociadoId: number){
         return await this.gruposFamiliaresDAO.actualizarTitularFamilia(familiarTitularId, id, clubAsociadoId)
+    }
+
+    async getTitularFamiliaById(id: number, grupoFamiliarId: number, clubAsociadoId: number){
+        return await this.gruposFamiliaresDAO.getTitularFamiliaById(id, grupoFamiliarId, clubAsociadoId)
+    }
+
+    async getGrupoFamiliarById(id: number){
+        return await this.gruposFamiliaresDAO.getGrupoFamiliarById(id)
     }
 }

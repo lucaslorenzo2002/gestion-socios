@@ -30,12 +30,12 @@ export const Cuota = sequelize.define('Cuota', {
 }, {
     underscored: true
 });
-CuotaProgramada.hasMany(Cuota, { foreignKey: 'cuota_programada_id', sourceKey: 'id' });
-Cuota.belongsTo(CuotaProgramada, { foreignKey: 'cuota_programada_id' });
 Club.hasMany(Cuota, { foreignKey: 'club_asociado_id', sourceKey: 'id' });
 Cuota.belongsTo(Club, { foreignKey: 'club_asociado_id' });
 TipoSocio.hasMany(Cuota, { foreignKey: 'tipo_socio_id', sourceKey: 'id' });
 Cuota.belongsTo(TipoSocio, { foreignKey: 'tipo_socio_id' });
+CuotaProgramada.hasMany(Cuota, { foreignKey: 'cuota_programada_id', sourceKey: 'id' });
+Cuota.belongsTo(CuotaProgramada, { foreignKey: 'cuota_programada_id' });
 Actividad.hasMany(Cuota, { foreignKey: 'actividad_id', sourceKey: 'id' });
 Cuota.belongsTo(Actividad, { foreignKey: 'actividad_id' });
 CategoriaSocio.hasMany(Cuota, { foreignKey: 'categoria_id', sourceKey: 'id' });

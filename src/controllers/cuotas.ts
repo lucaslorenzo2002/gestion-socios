@@ -18,11 +18,17 @@ export class CuotasController{
 			actividad, 
 			categorias, 
 			fechaEmision, 
+			diaDeVencimiento,
 			abonoMultiple, 
-			maxCantAbonoMult
+			maxCantAbonoMult,
+			actualizaMontoCuandoVence,
+			frecuenciaInteres,
+			intereses,
+			montoPostVencimiento,
+			interes
 		} = req.body;
-		const {club_asociado} = req.user;
 		
+		const {club_asociado} = req.user;
 		const nuevaCuota = await this.cuotasApi.programarCuota(
 			tipoDeCuota, 
 			fechaEmision, 
@@ -32,9 +38,21 @@ export class CuotasController{
 			categorias || [], 
 			abonoMultiple, 
 			abonoMultiple ? maxCantAbonoMult : null, 
-			club_asociado);
+			diaDeVencimiento,
+			actualizaMontoCuandoVence,
+			intereses ? frecuenciaInteres : null,
+			!intereses ? montoPostVencimiento : null,
+			intereses ? interes : null,
+			club_asociado
+		);
 
-			res.status(201).json({success: true, data: nuevaCuota});
+		res.status(201).json({success: true, data: nuevaCuota});
+	});	  
+
+	actualizarMontoCuotasVencidas = asyncHandler(async(req:any, res) => {
+		await this.cuotasApi.actualizarCuotasVencidas();
+
+		res.status(201).json({success: true, message: 'Cuotas actualizadas con exito'});
 	});	  
 
 	getMisCuotasPendientes = asyncHandler(async(req:any, res) => {
@@ -44,17 +62,17 @@ export class CuotasController{
 		res.status(201).json({success: true, data: cuotas});
 	});	  
 
-	getMisCuotasPagas = asyncHandler(async(req: any, res) => {
-		const {id, club_asociado_id} = req.user;
-		const cuotas = await this.cuotasApi.getMisCuotasPagas(id, club_asociado_id);
-
-		res.status(201).json({success: true, data: cuotas});
-	});	  
-
-	totalCuotasPendientes = asyncHandler(async(req: any, res) => {
+	totalCuotasPendientesDesdeAdmin = asyncHandler(async(req: any, res) => {
 		const {club_asociado_id} = req.user;
 		const {socioid} = req.params;
 		const total = await this.cuotasApi.totalCuotasPendientes(socioid, club_asociado_id);
+
+		res.status(201).json({success: true, data: total});
+	});	  
+
+	totalCuotasPendientes = asyncHandler(async(req: any, res) => {
+		const {club_asociado_id, id} = req.user;
+		const total = await this.cuotasApi.totalCuotasPendientes(id, club_asociado_id);
 
 		res.status(201).json({success: true, data: total});
 	});	  
@@ -79,8 +97,15 @@ export class CuotasController{
 		const {club_asociado} = req.user;
 		const cuotas = await this.cuotasApi.getAllCuotasSocio(parseInt(id), club_asociado.id);
 
-		res.status(201).json({success: true, data: cuotas});
+		res.status(201).json({success: true, data: cuotas});		
 	});	  
+
+	getCuotasSocioSocio = asyncHandler(async(req: any, res) => {
+		const {id, club_asociado} = req.user;
+		const cuotas = await this.cuotasApi.getAllCuotasSocio(parseInt(id), club_asociado.id);
+
+		res.status(201).json({success: true, data: cuotas});
+	})
 
 	getAllCuotas = asyncHandler(async(req: any, res) => {
 		try {
@@ -92,61 +117,47 @@ export class CuotasController{
 	});	  
 
 	pagarCuotaDesdeAdmin = asyncHandler(async(req: any, res) => {
-		try {
-			const{formaDePago, deuda, mesesAbonados, tipoDeCuota, id} = req.body;
-			const{sociocuotaid} = req.params;
-			const{club_asociado_id} = req.user;
-			await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, club_asociado_id, tipoDeCuota, mesesAbonados);
-			const socio = await this.sociosApi.getSocioById(id);
-			res.status(201).json({success: true, message: `la cuota de ${socio.dataValues.nombres} ${socio.dataValues.apellido} ha sido pagada con exito`});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
+		const{formaDePago, deuda, mesesAbonados, tipoDeCuota, id} = req.body;
+		const{sociocuotaid} = req.params;
+		const{club_asociado_id} = req.user;
+		await this.cuotasApi.pagarCuota(formaDePago, deuda, id, sociocuotaid, club_asociado_id, tipoDeCuota, mesesAbonados);
+		const socio = await this.sociosApi.getSocioById(id);
+		
+		res.status(201).json({success: true, message: `la cuota de ${socio.dataValues.nombres} ${socio.dataValues.apellido} ha sido pagada con exito`});
 	});	
 
 	getSocioCuota = asyncHandler(async(req, res) => {
-		try {
-			const cuota = await this.cuotasApi.getSocioCuota(parseInt(req.params.cuotaid));
-			res.status(201).json({success: true, data: cuota});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
+		const {cuotaid} = req.params;
+		const cuota = await this.cuotasApi.getSocioCuota(parseInt(cuotaid));
+
+		res.status(201).json({success: true, data: cuota});
 	});	  
 
 	getCuotasProgramadas = asyncHandler(async(req:any, res) => {
-		try {
-			const cuotas = await this.cuotasApi.getCuotasProgramadas(req.user.club_asociado_id);
-			res.status(201).json({success: true, data: cuotas});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
+		const{club_asociado_id} = req.user;
+		const cuotas = await this.cuotasApi.getCuotasProgramadas(club_asociado_id);
+		
+		res.status(201).json({success: true, data: cuotas});
 	});	  
 
  	eliminarCuotaProgramada = asyncHandler(async(req: any, res) => {
-		try {
-			const {tipoDeSocioId, actividadId, categoriaId} = req.body.data;
-			const {club_asociado_id} = req.user;
-			console.log(req.body.data)
-			const cuotasProgramadas = await this.cuotasApi.eliminarCuotaProgramada(
-				tipoDeSocioId, 
-				actividadId, 
-				categoriaId, 
-				club_asociado_id
-				); 
-			res.status(201).json({success: true, data: cuotasProgramadas});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
+		const {tipoDeSocioId, actividadId, categoriaId} = req.body.data;
+		const {club_asociado_id} = req.user;
+		const cuotasProgramadas = await this.cuotasApi.eliminarCuotaProgramada(
+			tipoDeSocioId, 
+			actividadId, 
+			categoriaId, 
+			club_asociado_id
+			);
+			
+		res.status(201).json({success: true, data: cuotasProgramadas});
 	});	 
 
 	actualizarValorDeCuota = asyncHandler(async(req: any, res) => {
-		try {
-			const {tipoDeSocioId, actividadId, categoriaId, monto} = req.body.data;
-			const {club_asociado_id} = req.user
-			await this.cuotasApi.actualizarValorDeCuota(club_asociado_id, tipoDeSocioId, actividadId, categoriaId, parseInt(monto));
-			res.status(201).json({success: true, message: 'Cuota actualizada con exito'});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
-	});	  
+		const {diaDeVencimiento, monto, id} = req.body.data;
+		const {club_asociado_id} = req.user
+		await this.cuotasApi.actualizarValorDeCuota(club_asociado_id, id, parseInt(monto), diaDeVencimiento);
+
+		res.status(201).json({success: true, message: 'Cuota actualizada con exito'});
+	})
 }

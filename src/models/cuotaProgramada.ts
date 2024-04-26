@@ -24,7 +24,24 @@ export const CuotaProgramada = sequelize.define('CuotaProgramada',{
 	tipo_de_cuota:{
 		type: DataTypes.STRING,
 		allowNull:false
-	}
+	},
+	dia_de_vencimiento:{
+		type: DataTypes.INTEGER,
+		defaultValue: 10
+	},
+	actualiza_monto_cuando_vence:{
+		type: DataTypes.BOOLEAN,
+		defaultValue: false
+	},
+	monto_post_vencimiento:{
+		type: DataTypes.INTEGER
+	},
+	interes_cuota_post_vencimiento:{
+		type: DataTypes.INTEGER
+	},
+	frecuencia_interes:{
+		type: DataTypes.STRING
+	} 
 }, {
 	underscored: true
 });

@@ -6,6 +6,8 @@ import { SociosApi } from '../services/socios.js';
 import { AdministradoresApi } from '../services/administradores.js';
 import { validationResult } from 'express-validator';
 import { RequestValidationError } from '../errors/request-validation-error.js';
+import { AdministradoresDAO } from '../database/administradores.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
 export class AuthController {
     constructor() {
         this.completeSocioRegister = asyncHandler(async (req, res) => {
@@ -25,9 +27,7 @@ export class AuthController {
         this.login = asyncHandler(async (req, res, next) => {
             passport.authenticate('login', (err, user, info) => {
                 if (err) {
-                    console.log(err);
-                    console.log(err.message);
-                    return next(err);
+                    throw new BadRequestError(err);
                 }
                 if (!user) {
                     console.log(info.message);
@@ -37,10 +37,10 @@ export class AuthController {
                     if (error)
                         return next(error.message);
                     const token = jwt.sign({ id: user.id }, 'adsfdcsfeds3w423ewdas');
-                    res.cookie('token', token, {
+                    res.cookie('token', token /* , {
                         sameSite: 'none',
                         secure: true
-                    });
+                    } */);
                     const socio = await this.sociosApi.getSocioById(user.id);
                     return res.status(201).json({ success: true, message: 'sesion iniciada', socio });
                 });
@@ -50,10 +50,10 @@ export class AuthController {
             const { codigoAdministrador } = req.body;
             const administrador = await this.administradoresApi.logInAdministrador(codigoAdministrador);
             const token = jwt.sign({ id: administrador.admin.id }, 'adsfdcsfeds3w423ewdas');
-            res.cookie('token', token, {
+            res.cookie('token', token /* , {
                 sameSite: 'none',
                 secure: true
-            });
+            } */);
             return res.status(201).json({ administrador });
         });
         this.logout = asyncHandler(async (req, res) => {
@@ -98,9 +98,19 @@ export class AuthController {
             await this.authApi.resetPassword(token, newPassword, confirmNewPassword);
             res.status(200).json({ mensaje: 'la contraseña ha sido actualizada con exito, inicie sesion nuevamente' });
         });
+        this.crearAdministradorTest = asyncHandler(async (req, res) => {
+            await this.administradoresDAO.crearAdministradorTest();
+            res.status(200).json({ mensaje: 'administrador de prueba creado con exito' });
+        });
+        this.crearClubTest = asyncHandler(async (req, res) => {
+            const club = await this.administradoresDAO.crearClubTest();
+            console.log(club);
+            res.status(200).json({ mensaje: 'club de prueba creado con exito' });
+        });
         this.authApi = new AuthApi();
         this.sociosApi = new SociosApi();
         this.administradoresApi = new AdministradoresApi();
+        this.administradoresDAO = new AdministradoresDAO();
     }
 }
 //# sourceMappingURL=auth.js.map

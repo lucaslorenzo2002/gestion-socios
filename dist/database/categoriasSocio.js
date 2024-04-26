@@ -12,6 +12,21 @@ export class CategoriasSocioDAO {
             logger.info(err);
         }
     }
+    async createCategoriaSocioAndActividad(newCategoriaSocio, newActividadSocio, categoriaId) {
+        try {
+            await Actividad_Socio.create(newActividadSocio);
+            const cantidadDeJugadores = await CategoriaSocio_Socio.count({
+                where: {
+                    categoria_socio_id: categoriaId
+                }
+            });
+            await CategoriaSocio_Socio.create(newCategoriaSocio);
+            await this.actualizarCategoriaCantidadDeJugadores(cantidadDeJugadores + 1, categoriaId);
+        }
+        catch (err) {
+            logger.info(err);
+        }
+    }
     async getCategoriasActividad(club, actividadId) {
         try {
             return await CategoriaSocio.findAll({
@@ -70,13 +85,19 @@ export class CategoriasSocioDAO {
     }
     async eliminarCategoriaSocioSocio(socioId, categoriaId, club) {
         try {
-            return await CategoriaSocio_Socio.destroy({
+            const cantidadDeJugadores = await CategoriaSocio_Socio.count({
+                where: {
+                    categoria_socio_id: categoriaId
+                }
+            });
+            await CategoriaSocio_Socio.destroy({
                 where: {
                     socio_id: socioId,
                     categoria_socio_id: categoriaId,
                     club_asociado_id: club
                 }
             });
+            await this.actualizarCategoriaCantidadDeJugadores(cantidadDeJugadores - 1, categoriaId);
         }
         catch (err) {
             logger.info(err);
@@ -132,7 +153,7 @@ export class CategoriasSocioDAO {
                     club_asociado_id: club
                 }
             });
-            return await CategoriaSocio.destroy({
+            await CategoriaSocio.destroy({
                 where: {
                     id,
                     club_asociado_id: club

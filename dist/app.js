@@ -1,6 +1,5 @@
 import express from 'express';
 import 'express-async-errors';
-import path from 'path';
 import passport from 'passport';
 import morgan from 'morgan';
 import session from 'cookie-session';
@@ -8,17 +7,15 @@ import cors from 'cors';
 import { Server as HttpServer } from 'http';
 import cookieParser from 'cookie-parser';
 import fileUpload from 'express-fileupload';
-import exphbs from 'express-handlebars';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
 import { errorHandler } from './middlewares/error-handler.js';
 import { NotFoundError } from './errors/not-found-error.js';
 //SETTINGS
-const app = express();
+export const app = express();
 const httpServer = new HttpServer(app);
 dotenv.config();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/* const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename); */
 import './config/passport.js';
 //MIDDLEWARES
 app.use(express.urlencoded({ extended: true }));
@@ -39,12 +36,12 @@ app.use(cors({
     credentials: true
 }));
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session()); /*
 app.set('views', path.join(__dirname, 'views'));
 app.engine('handlebars', exphbs.engine({
     layoutsDir: path.join(app.get('views'), 'layouts')
 }));
-app.set('view engine', 'handlebars');
+app.set('view engine', 'handlebars');  */
 //ROUTES
 import { AuthRouter } from './routes/auth.js';
 const authRouter = new AuthRouter();
@@ -73,6 +70,18 @@ app.use('/api', comunicacionRouter.start());
 import { GruposFamiliaresRouter } from './routes/gruposFamiliares.js';
 const gruposFamiliaresRouter = new GruposFamiliaresRouter();
 app.use('/api', gruposFamiliaresRouter.start());
+import { MediosDePagoRouter } from './routes/mediosDePago.js';
+const mediosDePagoRouter = new MediosDePagoRouter();
+app.use('/api', mediosDePagoRouter.start());
+import { DebitoAutomaticoRouter } from './routes/debitoAutomatico.js';
+const debitoAutomaticoRouter = new DebitoAutomaticoRouter();
+app.use('/api', debitoAutomaticoRouter.start());
+import { TransaccionesRouter } from './routes/transacciones.js';
+const transaccionesRouter = new TransaccionesRouter();
+app.use('/api', transaccionesRouter.start());
+import { InscripcionesRouter } from './routes/inscripciones.js';
+const inscripcionesRouter = new InscripcionesRouter();
+app.use('/api', inscripcionesRouter.start());
 app.all('*', (req, res, next) => {
     throw new NotFoundError();
 });

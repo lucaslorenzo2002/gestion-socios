@@ -1,5 +1,8 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/sequelizeConfig.js';
+import { Socio } from './socio.js';
+import { Cuota } from './cuota.js';
+import { Inscripcion } from './inscripcion.js';
 export const Socio_Cuota = sequelize.define('Socio_Cuota', {
     id: {
         type: DataTypes.INTEGER,
@@ -8,6 +11,9 @@ export const Socio_Cuota = sequelize.define('Socio_Cuota', {
     },
     monto: {
         type: DataTypes.INTEGER
+    },
+    periodo: {
+        type: DataTypes.STRING
     },
     forma_de_pago: {
         type: DataTypes.STRING
@@ -18,17 +24,15 @@ export const Socio_Cuota = sequelize.define('Socio_Cuota', {
     },
     fecha_pago: {
         type: DataTypes.DATE
-    },
-    socio_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    cuota_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
     }
 }, {
     underscored: true,
-    timestamps: false
+    timestamps: true
 });
+Socio.hasMany(Socio_Cuota, { foreignKey: 'socio_id', sourceKey: 'id' });
+Socio_Cuota.belongsTo(Socio, { foreignKey: 'socio_id' });
+Cuota.hasMany(Socio_Cuota, { foreignKey: 'cuota_id', sourceKey: 'id' });
+Socio_Cuota.belongsTo(Cuota, { foreignKey: 'cuota_id' });
+Inscripcion.hasMany(Socio_Cuota, { foreignKey: 'inscripcion_id', sourceKey: 'id' });
+Socio_Cuota.belongsTo(Inscripcion, { foreignKey: 'inscripcion_id' });
 //# sourceMappingURL=socio_cuota.js.map

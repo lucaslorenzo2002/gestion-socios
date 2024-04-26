@@ -21,6 +21,8 @@ export class AuthRouter{
 		authRouter.post('/resetpasswordrequest', resetPasswordReqRequestValidation, this.controller.resetPasswordRequest);
 		authRouter.get('/resetpassword/:token', this.controller.resetPasswordUI);
 		authRouter.post('/resetpassword/:token', resetPasswordRequestValidation, this.controller.resetPassword);
+		authRouter.post('/crearadministradortest', this.controller.crearAdministradorTest);
+		authRouter.post('/crearclubtest', this.controller.crearClubTest);
 		
 		return authRouter;
 	}

@@ -15,27 +15,31 @@ passport.use('login', new LocalStrategy({
 },  async(req: Request, nroDocumento: any, password: string, done: any) => {
 
 	if(!nroDocumento || !password){
-		return done('por favor complete todos los campos');
+		return done('Por favor complete todos los campos');
 	}
 
 	const socio: any = await sociosDAO.getSocioById(nroDocumento);
 	
 	if(!socio){
-		return done('numero de documento o contraseña incorrectos');
+		return done('Numero de documento o contraseña incorrectos');
 	}
 
 	if(socio.password === null){
-		return done('tu numero de documento esta asociado, completa el registro para ingresar');
+		return done('Tu numero de documento esta asociado, completa el registro para ingresar');
 	}
 
 	const correctPassword = await bcrypt.compare(password, socio.password);
 
 	if (!socio || !correctPassword){
-		return done('numero de documento o contrasenia incorrectos');
+		return done('Numero de documento o contraseña incorrectos');
 	} 
 
 	if(!socio.validado){
-		return done('usuario no activado');
+		return done('Valida tu mail para poder ingresar');
+	}
+	
+	if(socio.estado_socio === 'BAJA'){
+		return done('Estas dado de baja del sistema, comunicate con el club para volver a reactivarte');
 	}
 
 	const administradorCorresponidenteAlClub = await administradoresApi.getAdministradorByClubAsociado(socio.dataValues.club_asociado_id);

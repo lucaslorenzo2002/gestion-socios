@@ -1,7 +1,15 @@
+import { ActividadesDAO } from '../database/actividades.js';
 import { CategoriasSocioDAO } from '../database/categoriasSocio.js';
+import { CuotasDAO } from '../database/cuotas.js';
+import { TransaccionesDAO } from '../database/transacciones.js';
+import { transaccionesEnum } from '../enums/transacciones.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
 export class CategoriasSocioApi {
     constructor() {
         this.categoriasSocioDAO = new CategoriasSocioDAO();
+        this.cuotasDAO = new CuotasDAO();
+        this.actividadesDAO = new ActividadesDAO();
+        this.transaccionesDAO = new TransaccionesDAO();
     }
     async createCategoriaSocio(categoria, club, actividadId, limiteDeJugadores) {
         return await this.categoriasSocioDAO.createCategoriaSocio({
@@ -28,7 +36,7 @@ export class CategoriasSocioApi {
         let cantidadDeJugadoresCategoriaActualizada = cantidadDeJugadoresCategoria.dataValues.cantidad_de_jugadores + sociosId.length;
         const limiteDeJugadores = cantidadDeJugadoresCategoria.dataValues.limite_de_jugadores;
         if (limiteDeJugadores !== null && cantidadDeJugadoresCategoriaActualizada > limiteDeJugadores) {
-            return 'Excediste el limite de jugadores para la categoria';
+            throw new BadRequestError('Excediste el limite de jugadores para la categoria');
         }
         for (const socioId of sociosId) {
             await this.categoriasSocioDAO.createCategoriaSocioSocio({
@@ -54,6 +62,15 @@ export class CategoriasSocioApi {
         const cantidadDeCategoriasEnActividad = await this.categoriasSocioDAO.cantidadDeCategoriasEnActividad(actividadId);
         if (cantidadDeCategoriasEnActividad === 1)
             throw new Error('El deporte debe tener al menos una categoria');
+        const actividad = await this.actividadesDAO.getActividadById(actividadId);
+        if (actividad.dataValues.posee_cuota_inscripcion) {
+            await this.cuotasDAO.eliminarAllSocioCuotaByInscripcionInCategoria(actividadId, categoriaSocioId, clubAsociadoId);
+            await this.transaccionesDAO.eliminarAllTransaccionesByMotivo(transaccionesEnum.inscripcionDeportiva, actividadId, categoriaSocioId, clubAsociadoId);
+        }
+        const cuotaProgramada = await this.cuotasDAO.findCuotaProgrmada(null, actividadId, categoriaSocioId, clubAsociadoId);
+        if (cuotaProgramada) {
+            await this.cuotasDAO.eliminarCuotaProgramada(clubAsociadoId, null, actividadId, categoriaSocioId);
+        }
         return await this.categoriasSocioDAO.eliminarCategoria(categoriaSocioId, clubAsociadoId);
     }
 }

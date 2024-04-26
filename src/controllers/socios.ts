@@ -1,35 +1,42 @@
 import { Request, Response } from "express";
 import asyncHandler from 'express-async-handler';
 import {SociosApi} from '../services/socios.js';
+import { InscripcionesApi } from "../services/inscripciones.js";
+import {validationResult} from 'express-validator';
+import { RequestValidationError } from '../errors/request-validation-error.js';
 
 export class SociosController{
-    sociosApi: SociosApi
+    sociosApi: SociosApi;
+	inscripcionesApi: InscripcionesApi;
 	constructor(){
 		this.sociosApi = new SociosApi();
+		this.inscripcionesApi = new InscripcionesApi();
 	}
 
 	createSocio = asyncHandler(async(req: any, res: Response) => {
-		try {
-			const { nombres, apellido, id, socioDesde } = req.body;
-			const fileTempFilePath = req.files?.fotoDePerfil?.tempFilePath || null;
-			const fileName = req.files?.fotoDePerfil.name || null;
-			const fileUrl = req.files ? `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${fileName}` : null;
-		
-			await this.sociosApi.createSocio(
-				parseInt(id),
-				nombres,
-				apellido,
-				req.user.club_asociado_id,
-				fileTempFilePath,
-				fileName,
-				fileUrl,
-				socioDesde
-			);
+		const { nombres, apellido, id, socioDesde } = req.body;
+		const fileTempFilePath = req.files?.fotoDePerfil?.tempFilePath || null;
+		const fileName = req.files?.fotoDePerfil.name || null;
+		const fileUrl = req.files ? `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${fileName}` : null;
+	
+		const errors = validationResult(req);
 
-			res.status(200).json({success: true, message: 'nuevo socio registrado'});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
+		if(!errors.isEmpty()){
+			throw new RequestValidationError(errors.array());
 		}
+
+		await this.sociosApi.createSocio(
+			parseInt(id),
+			nombres,
+			apellido,
+			req.user.club_asociado_id,
+			fileTempFilePath,
+			fileName,
+			fileUrl,
+			socioDesde
+		);
+
+		res.status(200).json({success: true, message: 'nuevo socio registrado'});
 	});	    
 
 	getSocioById = asyncHandler(async(req:Request, res: Response) => {
@@ -109,13 +116,18 @@ export class SociosController{
 		}
 	});	
 
-	getSocioDeuda = asyncHandler(async(req:Request, res) => {
-		try {
-			const socioDeuda = await this.sociosApi.getSocioDeuda(parseInt(req.params.id));
-			res.status(201).json({success: true, data: socioDeuda});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
+	getSocioDeudaDesdeAdmin = asyncHandler(async(req:Request, res) => {
+		const{id} = req.params;
+		const socioDeuda = await this.sociosApi.getSocioDeuda(parseInt(id));
+
+		res.status(201).json({success: true, data: socioDeuda});
+	});	
+
+	getSocioDeuda = asyncHandler(async(req:any, res) => {
+		const{id} = req.user;
+		const socioDeuda = await this.sociosApi.getSocioDeuda(id);
+
+		res.status(201).json({success: true, data: socioDeuda});
 	});	
 
 	eliminarSocioDeTipoDeSocio = asyncHandler(async(req: any, res: Response) => {
@@ -130,23 +142,12 @@ export class SociosController{
 	});	
 
 	agregarSocioATipoDeSocio = asyncHandler(async(req: any, res: Response) => {
-		try {
-			const {ids, tipoSocio} = req.body;
-			const {tiposocioid} = req.params;
-			await this.sociosApi.agregarSocioATipoDeSocio(ids, tiposocioid, req.user.club_asociado_id);
-			res.status(201).json({success: true, message: `Socios agregados a ${tipoSocio} con exito`});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
-	});	 
+		const {club_asociado} = req.user;
+		const {ids, tipoSocio} = req.body;
+		const {tiposocioid} = req.params;
+		await this.sociosApi.asignarInscripcionSocial(ids, tiposocioid, club_asociado.id);
 
-	filterSocios = asyncHandler(async(req: any, res: Response) => {
-		try {
-			const sociosFiltrados = await this.sociosApi.filterSocios(req.body.tipoSocio, req.body.categoria, req.body.actividades, req.user.club_asociado_id);
-			res.status(201).json({success: true, data: sociosFiltrados});
-		} catch (err) {
-			res.status(500).json({success: false, message: 'hubo un error ' + err.message});
-		}
+		res.status(201).json({success: true, message: `Socios agregados a ${tipoSocio} con exito`});	
 	});	 
 
 	getAllSociosWithEmail = asyncHandler(async(req: any, res: Response) => {
@@ -169,6 +170,13 @@ export class SociosController{
 		const familiares = await this.sociosApi.getAllFamiliaresEnGrupoFamiliar(grupofamiliarid, club_asociado.id);
 		
 		res.status(201).json({success: true, data: familiares}); 
+	});	 
+
+	getAllSociosEnDebitoAutomatico = asyncHandler(async(req: any, res: Response) => {
+		const {club_asociado} = req.user;
+		const socios = await this.sociosApi.getAllSociosEnDebitoAutomatico(club_asociado.id);
+		
+		res.status(201).json({success: true, data: socios}); 
 	});	 
 
 }

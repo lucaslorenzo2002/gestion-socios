@@ -45,14 +45,10 @@ export class CategoriasSocioController {
             }
         });
         this.eliminarCategoria = asyncHandler(async (req, res) => {
-            try {
-                const { id, actividadid } = req.params;
-                await this.categoriasSocioApi.eliminarCategoriaSocio(id, actividadid, req.user.club_asociado.id);
-                res.status(201).json({ success: true, message: 'Categoria eliminada con exito' });
-            }
-            catch (err) {
-                res.status(500).json({ success: false, message: err.message });
-            }
+            const { id, actividadid } = req.params;
+            const { club_asociado } = req.user;
+            await this.categoriasSocioApi.eliminarCategoriaSocio(id, actividadid, club_asociado.id);
+            res.status(201).json({ success: true, message: 'Categoria eliminada con exito' });
         });
         this.categoriasSocioApi = new CategoriasSocioApi();
     }

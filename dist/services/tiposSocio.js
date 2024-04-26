@@ -8,13 +8,13 @@ export class TiposSocioApi {
     async createTipoSocio(tipoSocio, club) {
         return await this.tiposSocioDAO.createTipoSocio({ tipo_socio: tipoSocio, club_asociado_id: club });
     }
-    async getTiposSocio(club) {
+    async getTiposSocio(clubAsociadoId) {
         const tiposSocioConCantidad = [];
-        const tiposDeSocio = await this.tiposSocioDAO.getTiposSocio(club);
+        const tiposDeSocio = await this.tiposSocioDAO.getTiposSocio(clubAsociadoId);
         for (const tipoDeSocio of tiposDeSocio) {
             tiposSocioConCantidad.push({
                 ...tipoDeSocio.dataValues,
-                cantidadDeSocios: (await this.sociosApi.getAllSociosEnTipoSocio(club, parseInt(tipoDeSocio.dataValues.id))).length
+                cantidadDeSocios: (await this.sociosApi.getAllSociosEnTipoSocio(clubAsociadoId, parseInt(tipoDeSocio.dataValues.id))).length
             });
         }
         return tiposSocioConCantidad;

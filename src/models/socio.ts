@@ -55,10 +55,6 @@ export const Socio = sequelize.define('Socio',{
 	telefono_celular:{
 		type: DataTypes.STRING
 	},
-	deuda:{
-		type: DataTypes.DOUBLE,
-		defaultValue: 0.00
-	},
 	codigo_postal:{
 		type: DataTypes.INTEGER
 	},
@@ -92,10 +88,23 @@ export const Socio = sequelize.define('Socio',{
 	},
 	perfil_completado:{
 		type: DataTypes.INTEGER,
+	},
+	debito_automatico_activado:{
+		type: DataTypes.BOOLEAN,
+		defaultValue: false
+	},
+	estado_inscripcion_cuota_social:{
+		type: DataTypes.STRING
 	}
 }, {
-	underscored: true
-},
+	underscored: true,
+	indexes: [
+		{
+			unique: true,
+			fields: ['id']
+		}
+	]
+}
 ); 
 
 Socio.sync();

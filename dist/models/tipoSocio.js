@@ -10,6 +10,10 @@ export const TipoSocio = sequelize.define('TipoSocio', {
     tipo_socio: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    posee_cuota_inscripcion: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 }, {
     underscored: true,

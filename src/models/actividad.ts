@@ -10,8 +10,7 @@ export const Actividad = sequelize.define('Actividad',{
 	},
 	actividad: {
 		type: DataTypes.STRING,
-		allowNull: false,
-		unique: true
+		allowNull: false
 	},
 	posee_categorias:{
 		type: DataTypes.BOOLEAN,
@@ -23,6 +22,10 @@ export const Actividad = sequelize.define('Actividad',{
 	cantidad_de_jugadores:{
 		type: DataTypes.INTEGER,
 		defaultValue: 0
+	},
+	posee_cuota_inscripcion:{
+		type: DataTypes.BOOLEAN,
+		defaultValue: false
 	}
 }, {
 	underscored: true

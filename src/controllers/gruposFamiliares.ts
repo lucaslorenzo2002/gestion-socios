@@ -46,6 +46,14 @@ export class GruposFamiliaresController{
         res.status(201).json({success: true, data: descuentos});
 	});	
 
+    eliminarDescuentoGrupoFamiliar = asyncHandler(async(req: any, res: Response) => {
+        const {descuentogrupofamiliarid} = req.params;
+        const {club_asociado} = req.user;
+        await this.gruposFamiliaresApi.eliminarDescuentoGrupoFamiliar(descuentogrupofamiliarid, club_asociado.id)
+
+        res.status(201).json({success: true, message: 'Descuento eliminado con exito'});
+	});	
+
     actualizarTitularFamilia = asyncHandler(async(req: any, res: Response) => {
         const {club_asociado} = req.user; 
         const {familiarTitularId} = req.body;

@@ -39,17 +39,18 @@ export class ActividadesController{
 		const {sociosId} = req.body;
 		const {actividadid, categoriaid} = req.params;
 		const{club_asociado} = req.user
-		const createSocioActividad = await this.actividadesApi.createSocioActividadYSocioCategoria(sociosId, actividadid, categoriaid, club_asociado.id)
+		await this.actividadesApi.asignarInscripcionDeportivaConCategoria(sociosId, actividadid, categoriaid, club_asociado.id)
 			
 		res.status(201).json({success: true, message: 'Socios asignados al deporte con exito'});	
 	});	 
 
-	crearSocioActividad = asyncHandler(async(req: any, res) => {
+	asignarInscripcionDeportiva = asyncHandler(async(req: any, res) => {
 		const{sociosId} = req.body;
 		const{actividadid} = req.params;
 		const{club_asociado} = req.user;
-		await this.actividadesApi.createSocioActividad(sociosId, actividadid, club_asociado.id);
+		await this.actividadesApi.asignarInscripcionDeportiva(sociosId, actividadid, club_asociado.id);
 
+		
 		res.status(201).json({success: true, message: 'Socios asignados al deporte con exito'});
 	});	  
 
@@ -82,17 +83,22 @@ export class ActividadesController{
 		const {actividadid} = req.params;
 		const{club_asociado} = req.user
 		const socios = await this.actividadesApi.getAllSociosSinActividad(actividadid, club_asociado.id)
+		
 		res.status(201).json({success: true, data: socios});
 	});	  
 
 	getSocioActividades = asyncHandler(async(req: any, res) => {
-		if(req.params){
-			const actividades = await this.actividadesApi.getSocioActividad(req.params.socioid);
-			res.status(201).json({success: true, data: actividades});
-		}else{
-			const actividades = await this.actividadesApi.getSocioActividad(req.user.id);
-			res.status(201).json({success: true, data: actividades});
-		}
+		const {id} = req.user;
+		const actividades = await this.actividadesApi.getSocioActividad(req.user.id);
+
+		res.status(201).json({success: true, data: actividades});
+	});	 
+
+	getSocioActividadesDesdeAdmin = asyncHandler(async(req: any, res) => {
+		const {socioid} = req.params
+		const actividades = await this.actividadesApi.getSocioActividad(socioid);
+
+		res.status(201).json({success: true, data: actividades});
 	});	  
 
 	eliminarActividad = asyncHandler(async(req: any, res) => {

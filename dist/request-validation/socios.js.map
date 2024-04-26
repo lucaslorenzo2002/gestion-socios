@@ -1,1 +1,1 @@
-{"version":3,"file":"socios.js","sourceRoot":"","sources":["../../src/request-validation/socios.ts"],"names":[],"mappings":""}
+{"version":3,"file":"socios.js","sourceRoot":"","sources":["../../src/request-validation/socios.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,IAAI,EAAE,MAAM,mBAAmB,CAAC;AAEzC,MAAM,CAAC,MAAM,2BAA2B,GAAG;IACvC,IAAI,CAAC,IAAI,CAAC;SACL,SAAS,EAAE;SACX,QAAQ,CAAC,EAAC,GAAG,EAAE,CAAC,EAAC,CAAC,CAAC,WAAW,CAAC,uCAAuC,CAAC;CAC3E,CAAA"}

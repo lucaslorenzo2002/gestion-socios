@@ -10,13 +10,13 @@ export class ActividadesRouter {
         actividadesRouter.post('/actividad', adminAuth, this.controller.createActividad);
         actividadesRouter.post('/asignarsociosaactividadycategoria/:actividadid/:categoriaid', adminAuth, this.controller.crearSocioActividadYCategoria);
         actividadesRouter.post('/eliminarsociosdeactividadycategoria/:actividadid/:categoriaid', adminAuth, this.controller.eliminarSocioActividadYCategoria);
-        actividadesRouter.post('/asignarsociosaactividad/:actividadid', adminAuth, this.controller.crearSocioActividad);
+        actividadesRouter.post('/asignarsociosaactividad/:actividadid', adminAuth, this.controller.asignarInscripcionDeportiva);
         actividadesRouter.post('/eliminarsociosdeactividad/:actividadid', adminAuth, this.controller.eliminarSocioActividad);
         actividadesRouter.get('/sociosactividad/:actividadid', adminAuth, this.controller.getAllSociosEnActividad);
         actividadesRouter.get('/sociossinactividad/:actividadid', adminAuth, this.controller.getAllSociosSinActividad);
         actividadesRouter.get('/actividades', adminAuth, this.controller.getActividades);
         actividadesRouter.get('/actividadessocio', auth, this.controller.getSocioActividades);
-        actividadesRouter.get('/actividadessociodesdeadmin/:socioid', adminAuth, this.controller.getSocioActividades);
+        actividadesRouter.get('/actividadessociodesdeadmin/:socioid', adminAuth, this.controller.getSocioActividadesDesdeAdmin);
         actividadesRouter.get('/eliminaractividad/:id', adminAuth, this.controller.eliminarActividad);
         return actividadesRouter;
     }

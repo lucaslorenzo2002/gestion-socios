@@ -10,14 +10,20 @@ import {TipoSocio} from '../models/tipoSocio.js';
 import {SociosDAO} from './socios.js';
 import { Club } from '../models/club.js';
 import { Actividad } from '../models/actividad.js';
-import { calcularDescuentoPorCuota } from '../utils/calcularDescuentoDeCuota.js';
+import { Inscripcion } from '../models/inscripcion.js';
+import { Op } from 'sequelize';
+import { TransaccionesDAO } from './transacciones.js';
+import { InscripcionesDAO } from './inscripciones.js';
+import sequelizeInstance from '../config/sequelizeConfig.js';
 
 export class CuotasDAO{
 	categoriasSocioDAO: CategoriasSocioDAO;
 	sociosDAO: SociosDAO;
+	transaccionesDAO: TransaccionesDAO;
 	constructor(){
 		this.categoriasSocioDAO = new CategoriasSocioDAO();
 		this.sociosDAO = new SociosDAO();
+		this.transaccionesDAO = new TransaccionesDAO();
 	}
 
 	async programarCuota(newCuotaProgramada){
@@ -44,25 +50,84 @@ export class CuotasDAO{
 		}
 	}
 
-	async findCuotaProgrmada(tipoSocioId, actividadId, categoriaId, club){
+	async eliminarSocioCuota(id: number){
 		try {
-			if(tipoSocioId){
-				return await CuotaProgramada.findOne({
-					where: {
-						tipo_socio_id: parseInt(tipoSocioId),
-						club_asociado_id: club
+			return await Socio_Cuota.destroy({
+				where: {
+					id
+				}
+			})
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async eliminarAllSocioCuotaByInscripcion(inscripcionId: number, clubAsociadoId: number){
+		try {
+			return await Socio_Cuota.destroy({
+				where: {
+					estado: 'PENDIENTE',
+					inscripcion_id: inscripcionId
+				}
+			})
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async eliminarAllSocioCuotaByInscripcionInCategoria(actividadId: number, categoriaId: number, clubAsociadoId: number){
+		try {
+			const socios:any = await this.transaccionesDAO.sociosWithTransaccionesPendientesCuotaInscripcion(null, actividadId, categoriaId, clubAsociadoId);
+			const sociosIds = socios.map(socio => socio.id);
+			
+			const inscripcion = await Inscripcion.findOne({
+				where:{
+					actividad_id: actividadId,
+                    club_asociado_id: clubAsociadoId
+				}
+			});
+			
+			await Socio_Cuota.destroy({
+				where:{
+					estado: 'PENDIENTE',
+					inscripcion_id: inscripcion.dataValues.id,
+					socio_id: {
+						[Op.in]: sociosIds
 					}
-				});
-			}else{
+				}
+			})
+		} catch (error) {
+			logger.info(error)
+		}
+	}
+
+	async findCuotaProgrmada(tipoSocioId: number, actividadId: number, categoriaId: number, club: number){
+		try {
+			if(tipoSocioId && !actividadId){
 				return await CuotaProgramada.findOne({
 					where: {
-						actividad_id: parseInt(actividadId),
-						categoria_id: parseInt(categoriaId) || null,
+						tipo_socio_id: tipoSocioId,
 						club_asociado_id: club
 					}
 				});
 			}
-			
+			if(!tipoSocioId && actividadId && !categoriaId){
+				return await CuotaProgramada.findOne({
+					where: {
+						actividad_id: actividadId,
+						club_asociado_id: club
+					}
+				});
+			}
+			if(!tipoSocioId && actividadId && categoriaId){
+				return await CuotaProgramada.findOne({
+					where: {
+						actividad_id: actividadId,
+						categoria_id: categoriaId,
+						club_asociado_id: club
+					}
+				});
+			}
 		} catch (err) {
 			logger.info(err);
 		}
@@ -82,6 +147,66 @@ export class CuotasDAO{
 				}
 			})
 		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async findAllCuotasProgramadasWithAcciones(diaActual: number){
+		try{
+			return await CuotaProgramada.findAll({
+				attributes: [
+					[sequelizeInstance.fn('EXTRACT', sequelizeInstance.literal('MONTH FROM "created_at"')), 'mes'],
+					'id',
+					'monto',
+					'interes_cuota_post_vencimiento',
+					'monto_post_vencimiento',
+					'actualiza_monto_cuando_vence',
+					'dia_de_vencimiento'
+				],
+				where:{
+					actualiza_monto_cuando_vence: true,
+					dia_de_vencimiento: diaActual
+				}
+			})
+		}catch(err){
+			logger.info(err);
+		}		
+	}
+
+	async actualizarMontoSocioCuotasVencidas(cuotaProgramadaId: number, montoVencimiento: number, interes: boolean){
+		try{
+			const ultimaCuotaCreadaByCuotaProgramadaId = await Cuota.findOne({
+				order:[['id', 'DESC']],
+				limit: 1,
+				raw: true,
+				where: {
+					cuota_programada_id: cuotaProgramadaId
+				}
+			});
+			
+			if(interes){
+				const montoSocioCuota = await Socio_Cuota.max('monto', {
+					where:{
+						cuota_id: ultimaCuotaCreadaByCuotaProgramadaId.id,
+						estado: 'PENDIENTE'
+					}
+				})
+				
+				return await Socio_Cuota.update({monto: montoSocioCuota+montoVencimiento}, {
+					where:{
+						cuota_id: ultimaCuotaCreadaByCuotaProgramadaId.id,
+						estado: 'PENDIENTE'
+					}
+				});
+			}else{
+				return await Socio_Cuota.update({monto: montoVencimiento}, {
+					where:{
+						cuota_id: ultimaCuotaCreadaByCuotaProgramadaId.id,
+						estado: 'PENDIENTE'
+					}
+				}); 
+			}
+		}catch(err){
 			logger.info(err);
 		}
 	}
@@ -109,6 +234,43 @@ export class CuotasDAO{
 		}
 	}
 	
+	async findCuotaByTipoAndPeriodo(periodo: string, tipoDeSocioId: number, actividadId: number, categoriaId: number, clubAsociadoId: number){
+		try {
+			if(tipoDeSocioId){
+				return await Cuota.findOne({
+					where: {
+						tipo_socio_id: tipoDeSocioId,
+						fecha_emision: periodo,
+						club_asociado_id: clubAsociadoId
+					}
+				})
+			}
+
+			if(actividadId && !categoriaId){
+				return await Cuota.findOne({
+					where: {
+						actividad_id: actividadId,
+						fecha_emision: periodo,
+						club_asociado_id: clubAsociadoId
+					}
+				})
+			}
+
+			if(categoriaId){
+				return await Cuota.findOne({
+					where: {
+						actividad_id: actividadId,
+						categoria_id: categoriaId,
+						fecha_emision: periodo,
+						club_asociado_id: clubAsociadoId
+					}
+				})
+			}
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
 	async pagarCuota(formaDePago, socioId, socioCuotaId, clubAsociado){
 		try{
 			const socioCuota = await this.getSocioCuota(socioCuotaId);
@@ -144,6 +306,19 @@ export class CuotasDAO{
 		}
 	}
 
+	async getSocioCuotaInscripcion(inscripcionId: number, socioId: number){
+		try {
+			return await Socio_Cuota.findOne({
+				where: {
+					inscripcion_id: inscripcionId,
+					socio_id: socioId
+				}
+			})
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
 	async getCuota(id){
 		try{
 			return await Cuota.findOne({
@@ -161,6 +336,10 @@ export class CuotasDAO{
 			const socio: any = await this.sociosDAO.getSocioById(socioId);
 			const titularFamiliaId = socio.Grupo_familiar?.dataValues.familiar_titular_id;
 
+			if(socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId){
+				return 0
+			}
+
 			if(!socio.dataValues.grupo_familiar_id){
 				return await Socio_Cuota.count({
 					where: { 
@@ -172,23 +351,15 @@ export class CuotasDAO{
 
 			if(socio.dataValues.grupo_familiar_id && socio.dataValues.id === titularFamiliaId){
 				const familiares = await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(socio.Grupo_familiar.dataValues.id, clubAsociadoId);
-				let totalCuotasPendientes = 0;
+				const familiaresIds = familiares.map((familiar) => familiar.dataValues.id);
 
-				for (const familiar of familiares) {
-					const cuotasPendientesFamiliar = await Socio_Cuota.count({
-						where: { 
-							socio_id: familiar.dataValues.id ,
-							estado: 'PENDIENTE'
-						},
-					});
-					totalCuotasPendientes+=cuotasPendientesFamiliar;
-				}
-				
-				return totalCuotasPendientes
-			}
+				return await Socio_Cuota.count({
+					where: { 
+						socio_id: familiaresIds,
+						estado: 'PENDIENTE'
+					},
+				});
 
-			if(socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId){
-				return 0
 			}
 
 		} catch (err) {
@@ -202,79 +373,14 @@ export class CuotasDAO{
 			const titularFamiliaId = socio.Grupo_familiar?.dataValues.familiar_titular_id;
 	
 			if (!socio.dataValues.grupo_familiar_id) {
-				const misCuotasId = await Socio_Cuota.findAll({
-					where: {
-						socio_id: socioId,
-						estado: 'PENDIENTE'
-					}
-				});
-	
-				const misCuotasDTO = [];
-				for (let i = 0; i < misCuotasId.length; i++) {
-					const cuota: any = await Cuota.findOne({
-						include: [{
-							model: TipoSocio,
-							attributes: ['tipo_socio']
-						}, {
-							model: Actividad,
-							attributes: ['actividad']
-						}, {
-							model: CategoriaSocio,
-							attributes: ['categoria']
-						}],
-						where: {
-							id: misCuotasId[i].dataValues.cuota_id
-						}
-					});
-					const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
-					const fechaVto = new Date(año, mes - 1, dia);
-					const cuotaProgramada: any = await CuotaProgramada.findOne({
-						attributes: ['abono_multiple', 'maxima_cantidad_abono_multiple'],
-						where: {
-							tipo_socio_id: cuota.dataValues.tipo_socio_id
-						}
-					});
-	
-					misCuotasDTO.push({
-						id: misCuotasId[i].dataValues.id,
-						tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-						deporte: cuota.Actividad?.dataValues.actividad,
-						tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
-						categoria: cuota.CategoriaSocio?.dataValues.categoria,
-						estado: fechaVto < new Date() ? 'VENCIDA' : 'PENDIENTE',
-						abono_multiple: cuotaProgramada.dataValues.abono_multiple,
-						max_cant_abono: cuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
-						monto: misCuotasId[i].dataValues.monto,
-						fecha_emision: cuota.dataValues.fecha_emision,
-						fecha_vencimiento: cuota.fecha_vencimiento,
-						cantidad: 1,
-						vencida: fechaVto < new Date()
-					});
-				}
-				return misCuotasDTO;
-			}
-	
-			if (socio.dataValues.grupo_familiar_id && socio.dataValues.id === titularFamiliaId) {
-				const familiares = await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(socio.Grupo_familiar.dataValues.id, clubAsociadoId);
-				const allCuotasFamiliares = [];
-	
-				for (const familiar of familiares) {
-					const cuotasFamiliar = await Socio_Cuota.findAll({
-						where: {
-							socio_id: familiar.dataValues.id,
-							estado: 'PENDIENTE'
-						}
-					});
-	
-					allCuotasFamiliares.push(cuotasFamiliar);
-				}
-	
-				const cuotasFamiliaresDTO = [];
-	
-				for (const cuotasFamiliar of allCuotasFamiliares) {
-					for (const cuotaFamiliar of cuotasFamiliar) {
-						const cuota: any = await Cuota.findOne({
-							include: [{
+				const misCuotasId: any = await Socio_Cuota.findAll({
+					order:[['createdAt', 'DESC']],
+					include: [
+						{
+							model: Cuota,
+							attributes: ['tipo_de_cuota', 'fecha_vencimiento', ],
+							include: [
+							{
 								model: TipoSocio,
 								attributes: ['tipo_socio']
 							}, {
@@ -283,36 +389,172 @@ export class CuotasDAO{
 							}, {
 								model: CategoriaSocio,
 								attributes: ['categoria']
-							}],
-							where: {
-								id: cuotaFamiliar.dataValues.cuota_id
+							}, {
+								model: CuotaProgramada,
+								attributes: ['maxima_cantidad_abono_multiple', 'abono_multiple']
 							}
+							]
+						},
+						{
+							model: Inscripcion,
+							attributes: ['tipo_de_cuota'],
+							include: [
+								{
+									model: TipoSocio,
+									attributes: ['tipo_socio']
+								}, {
+									model: Actividad,
+									attributes: ['actividad']
+								}, {
+									model: CategoriaSocio,
+									attributes: ['categoria']
+								}
+							]
+						}
+					],
+					where: {
+						socio_id: socioId,
+						estado: 'PENDIENTE'
+					}
+				});
+	
+				const misCuotasDTO = [];
+				for (let i = 0; i < misCuotasId.length; i++) {
+					if (misCuotasId[i].dataValues.cuota_id) {
+						const [dia, mes, año] = misCuotasId[i].Cuotum.fecha_vencimiento.split('-');
+						const fechaVto = new Date(año, mes - 1, dia);
+	
+						misCuotasDTO.push({
+							id: misCuotasId[i].dataValues.id,
+							tipo_de_cuota: misCuotasId[i].Cuotum.dataValues.tipo_de_cuota,
+							deporte: misCuotasId[i].Cuotum.Actividad?.dataValues.actividad,
+							tipo_de_socio: misCuotasId[i].Cuotum.TipoSocio?.dataValues.tipo_socio,
+							categoria: misCuotasId[i].Cuotum.CategoriaSocio?.dataValues.categoria,
+							estado: fechaVto < new Date() ? 'VENCIDA' : 'PENDIENTE',
+							abono_multiple: misCuotasId[i].Cuotum.CuotaProgramada.dataValues.abono_multiple,
+							max_cant_abono: misCuotasId[i].Cuotum.CuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
+							monto: misCuotasId[i].dataValues.monto,
+							fecha_emision: misCuotasId[i].Cuotum.dataValues.fecha_emision,
+							fecha_vencimiento: misCuotasId[i].Cuotum.fecha_vencimiento,
+							cantidad: 1,
+							vencida: fechaVto < new Date()
 						});
-						const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
+					} else {
+	
+						misCuotasDTO.push({
+							id: misCuotasId[i].dataValues.id,
+							tipo_de_cuota: 'cuota inscripcion',
+							deporte: misCuotasId[i].Inscripcion.Actividad?.dataValues.actividad,
+							tipo_de_socio: misCuotasId[i].Inscripcion.TipoSocio?.dataValues.tipo_socio,
+							categoria: misCuotasId[i].Inscripcion.CategoriaSocio?.dataValues.categoria,
+							estado: 'PENDIENTE',
+							monto: misCuotasId[i].dataValues.monto,
+							fecha_emision: misCuotasId[i].Inscripcion.dataValues.created_at
+						});
+					}
+				}
+				return misCuotasDTO;
+			}
+	
+			if (socio.dataValues.grupo_familiar_id && socio.dataValues.id === titularFamiliaId) {
+				const familiares = await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(socio.Grupo_familiar.dataValues.id, clubAsociadoId);
+				const familiaresIds = familiares.map((familiar) => familiar.dataValues.id);
+
+				const cuotasFamiliares:any = await Socio_Cuota.findAll({
+					order:[['createdAt', 'DESC']],
+					include: [
+						{
+							model:Socio,
+							attributes: ['nombres', 'apellido']
+						},
+						{
+							model: Cuota,
+							attributes: ['tipo_de_cuota', 'fecha_vencimiento', ],
+							include: [
+							{
+								model: TipoSocio,
+								attributes: ['tipo_socio']
+							}, {
+								model: Actividad,
+								attributes: ['actividad']
+							}, {
+								model: CategoriaSocio,
+								attributes: ['categoria']
+							}, {
+								model: CuotaProgramada,
+								attributes: ['maxima_cantidad_abono_multiple', 'abono_multiple']
+							}
+							]
+						},
+						{
+							model: Inscripcion,
+							attributes: ['tipo_de_cuota'],
+							include: [
+								{
+									model: TipoSocio,
+									attributes: ['tipo_socio']
+								}, {
+									model: Actividad,
+									attributes: ['actividad']
+								}, {
+									model: CategoriaSocio,
+									attributes: ['categoria']
+								}
+							]
+						}
+					],
+					where: {
+						socio_id: familiaresIds,
+						estado: 'PENDIENTE'
+					}
+				});
+			
+	
+				const cuotasFamiliaresDTO = [];
+	
+				for (const cuotaFamiliar of cuotasFamiliares) {
+					const correspondeA = `${cuotaFamiliar.Socio.dataValues.nombres} ${cuotaFamiliar.Socio.dataValues.apellido}` 
+					if (cuotaFamiliar.dataValues.cuota_id) {
+						const [dia, mes, año] = cuotaFamiliar.Cuotum.fecha_vencimiento.split('-');
 						const fechaVto = new Date(año, mes - 1, dia);
 						const cuotaProgramada: any = await CuotaProgramada.findOne({
 							attributes: ['abono_multiple', 'maxima_cantidad_abono_multiple'],
 							where: {
-								tipo_socio_id: cuota.dataValues.tipo_socio_id
+								tipo_socio_id: cuotaFamiliar.Cuotum.dataValues.tipo_socio_id
 							}
 						});
-	
+
 						cuotasFamiliaresDTO.push({
 							id: cuotaFamiliar.dataValues.id,
-							tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-							deporte: cuota.Actividad?.dataValues.actividad,
-							tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
-							categoria: cuota.CategoriaSocio?.dataValues.categoria,
+							tipo_de_cuota: cuotaFamiliar.Cuotum.dataValues.tipo_de_cuota,
+							deporte: cuotaFamiliar.Cuotum.Actividad?.dataValues.actividad,
+							tipo_de_socio: cuotaFamiliar.Cuotum.TipoSocio?.dataValues.tipo_socio,
+							categoria: cuotaFamiliar.Cuotum.CategoriaSocio?.dataValues.categoria,
 							estado: fechaVto < new Date() ? 'VENCIDA' : 'PENDIENTE',
 							abono_multiple: cuotaProgramada.dataValues.abono_multiple,
 							max_cant_abono: cuotaProgramada.dataValues.maxima_cantidad_abono_multiple,
 							monto: cuotaFamiliar.dataValues.monto,
-							fecha_emision: cuota.dataValues.fecha_emision,
-							fecha_vencimiento: cuota.fecha_vencimiento,
+							fecha_emision: cuotaFamiliar.Cuotum.dataValues.fecha_emision,
+							fecha_vencimiento: cuotaFamiliar.Cuotum.fecha_vencimiento,
+							corresponde_a:correspondeA,
 							cantidad: 1,
 							vencida: fechaVto < new Date()
 						});
-					}
+					} else {
+						cuotasFamiliaresDTO.push({
+							id: cuotaFamiliar.dataValues.id,
+							tipo_de_cuota: 'cuota inscripcion',
+							deporte: cuotaFamiliar.Inscripcion.Actividad?.dataValues.actividad,
+							tipo_de_socio: cuotaFamiliar.Inscripcion.TipoSocio?.dataValues.tipo_socio,
+							categoria: cuotaFamiliar.Inscripcion.CategoriaSocio?.dataValues.categoria,
+							estado: 'PENDIENTE',
+							monto: cuotaFamiliar.dataValues.monto,
+							fecha_emision: cuotaFamiliar.Inscripcion.dataValues.created_at,
+							abono_multiple: false,
+							corresponde_a: correspondeA,
+							cantidad: 1
+						});
+					} 
 				}
 				return cuotasFamiliaresDTO;
 			}
@@ -322,266 +564,317 @@ export class CuotasDAO{
 		}
 	}
 	
-	async getLast3CuotasPagas(socioId: number, clubAsociadoId: number){
-		try{
-			const socio: any = await this.sociosDAO.getSocioById(socioId);
+	async getLast3CuotasPagas(socioId: number, clubAsociadoId: number) {
+		try {
+			const socio: any = await this.sociosDAO.getSocioById(socioId);//(o (1))
 			const titularFamiliaId = socio.Grupo_familiar?.dataValues.familiar_titular_id;
-
-			if(socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId) {
-				return []
+	
+			if (socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId) {
+				return [];
 			}
-
+	
 			if (!socio.dataValues.grupo_familiar_id) {
-				const cuotasSocio = await Socio_Cuota.findAll({
-					where:{
+				const cuotasSocio: any = await Socio_Cuota.findAll({
+					include: [
+						{
+							model: Cuota,
+							attributes: ['tipo_de_cuota', 'fecha_vencimiento', ],
+							include: [
+							{
+								model: TipoSocio,
+								attributes: ['tipo_socio']
+							}, {
+								model: Actividad,
+								attributes: ['actividad']
+							}, {
+								model: CategoriaSocio,
+								attributes: ['categoria']
+							}, {
+								model: CuotaProgramada,
+								attributes: ['maxima_cantidad_abono_multiple', 'abono_multiple']
+							}
+							]
+						},
+						{
+							model: Inscripcion,
+							attributes: ['tipo_de_cuota'],
+							include: [
+								{
+									model: TipoSocio,
+									attributes: ['tipo_socio']
+								}, {
+									model: Actividad,
+									attributes: ['actividad']
+								}, {
+									model: CategoriaSocio,
+									attributes: ['categoria']
+								}
+							]
+						}
+					],
+					where: {
 						socio_id: socioId,
 						estado: 'PAGO'
 					},
-					order:[
+					order: [
 						['fecha_pago', 'DESC']
 					],
 					limit: 3
 				});
-
+	
 				const cuotasSocioDTO = [];
 				for (let i = 0; i < cuotasSocio.length; i++) {
-					const cuota: any = await Cuota.findOne({
-						where: {
-							id: cuotasSocio[i].dataValues.cuota_id
-						}
-					});
-	
-					cuotasSocioDTO.push({
-						id: cuotasSocio[i].dataValues.id, 
-						estado: 'PAGO',
-						tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-						monto: cuotasSocio[i].dataValues.monto,
-						fecha_emision:cuota.dataValues.fecha_emision,
-						forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
-						fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago)
-					});
+					if (cuotasSocio[i].dataValues.cuota_id) {
+						cuotasSocioDTO.push({
+							id: cuotasSocio[i].dataValues.id,
+							estado: 'PAGO',
+							tipo_de_cuota: cuotasSocio[i].Cuotum?.dataValues.tipo_de_cuota,
+							monto: cuotasSocio[i].dataValues.monto,
+							fecha_emision: cuotasSocio[i].dataValues.periodo,
+							forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
+							fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago)
+						});
+					} else {
+						cuotasSocioDTO.push({
+							id: cuotasSocio[i].dataValues.id,
+							estado: 'PAGO',
+							tipo_de_cuota: cuotasSocio[i].Inscripcion?.dataValues.tipo_de_cuota,
+							monto: cuotasSocio[i].dataValues.monto,
+							forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
+							fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago)
+						});
+					}
 				}
 				return cuotasSocioDTO;
 			}
 	
 			if (socio.dataValues.grupo_familiar_id && socio.dataValues.id === titularFamiliaId) {
 				const familiares = await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(socio.Grupo_familiar.dataValues.id, clubAsociadoId);
-				const familiaresIds = familiares.map(familiar => familiar.dataValues.id);
-	
-				const cuotasFamiliares = await Socio_Cuota.findAll({
-					where:{
+				const familiaresIds = familiares.map((familiar) => familiar.dataValues.id);
+
+				const cuotasFamiliares: any = await Socio_Cuota.findAll({
+					include: [
+						{
+							model: Cuota,
+							attributes: ['tipo_de_cuota', 'fecha_vencimiento', ],
+							include: [
+							{
+								model: TipoSocio,
+								attributes: ['tipo_socio']
+							}, {
+								model: Actividad,
+								attributes: ['actividad']
+							}, {
+								model: CategoriaSocio,
+								attributes: ['categoria']
+							}, {
+								model: CuotaProgramada,
+								attributes: ['maxima_cantidad_abono_multiple', 'abono_multiple']
+							}
+							]
+						},
+						{
+							model: Inscripcion,
+							attributes: ['tipo_de_cuota'],
+							include: [
+								{
+									model: TipoSocio,
+									attributes: ['tipo_socio']
+								}, {
+									model: Actividad,
+									attributes: ['actividad']
+								}, {
+									model: CategoriaSocio,
+									attributes: ['categoria']
+								}
+							]
+						}
+					],
+					where: {
 						socio_id: familiaresIds,
 						estado: 'PAGO'
 					},
-					order:[
+					order: [
 						['fecha_pago', 'DESC']
 					],
 					limit: 3
 				});
 	
-			const cuotasFamiliaresDTO = [];
-	
-			for (const cuotaFamiliar of cuotasFamiliares) {
-					const cuota: any = await Cuota.findOne({
-						where: {
-							id: cuotaFamiliar.dataValues.cuota_id
-							}
+				const cuotasFamiliaresDTO = [];
+
+				for (const cuotaFamiliar of cuotasFamiliares) {
+					if (cuotaFamiliar.dataValues.cuota_id) {
+						cuotasFamiliaresDTO.push({
+							id: cuotaFamiliar?.dataValues.id,
+							estado: 'PAGO',
+							tipo_de_cuota: cuotaFamiliar.Cuotum?.dataValues.tipo_de_cuota,
+							monto: cuotaFamiliar?.dataValues.monto,
+							fecha_emision: cuotaFamiliar?.dataValues.periodo,
+							forma_de_pago: cuotaFamiliar?.dataValues.forma_de_pago,
+							fecha_de_pago: formatDateString(cuotaFamiliar.dataValues.fecha_pago)
 						});
-	
-					cuotasFamiliaresDTO.push({
-						id: cuotaFamiliar.dataValues.id, 
-						estado: 'PAGO',
-						tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-						monto: cuotaFamiliar.dataValues.monto,
-						fecha_emision:cuota.dataValues.fecha_emision,
-						forma_de_pago: cuotaFamiliar.dataValues.forma_de_pago,
-						fecha_de_pago: formatDateString(cuotaFamiliar.dataValues.fecha_pago)
+					} else {
+						cuotasFamiliaresDTO.push({
+							id: cuotaFamiliar?.dataValues.id,
+							estado: 'PAGO',
+							tipo_de_cuota: cuotaFamiliar.Inscripcion?.dataValues.tipo_de_cuota,
+							monto: cuotaFamiliar?.dataValues.monto,
+							forma_de_pago: cuotaFamiliar?.dataValues.forma_de_pago,
+							fecha_de_pago: formatDateString(cuotaFamiliar?.dataValues.fecha_pago)
 						});
 					}
-					
-					return cuotasFamiliaresDTO;
-			}
-
-		}catch(err){
-			logger.info(err);
-		}
-	} 
-
-	//OPTIMAZAR ESTAS QUERIES: VER COMO HACER LA ASOCIACION EN SOCIO_CUOTA
-
-	async getMisCuotasPagas(socioId: number, clubAsociadoId: number){
-		try{
-			const socio: any = await this.sociosDAO.getSocioById(socioId);
-			const titularFamiliaId = socio.Grupo_familiar?.dataValues.familiar_titular_id;
-
-			if(socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId) {
-				return []
-			}
-
-			if (!socio.dataValues.grupo_familiar_id) {
-				const misCuotasId = await Socio_Cuota.findAll({
-					where:{
-						socio_id: socioId,
-						estado: 'PAGO'
-					},
-					order:[
-						['fecha_pago', 'DESC']
-					],
-				});
-	
-				const misCuotasData = [];
-					for (let i = 0; i < misCuotasId.length; i++) {
-						const cuota: any = await Cuota.findOne({
-							include:[
-										{
-											model: TipoSocio,
-											attributes: ['tipo_socio']
-										},{
-											model: Actividad,
-											attributes: ['actividad']
-										},{
-											model: CategoriaSocio,
-											attributes: ['categoria']
-										}
-									],						
-							where:{
-								id: misCuotasId[i].dataValues.cuota_id
-							}
-						});
-					
-					misCuotasData.push({
-						monto: misCuotasId[i].dataValues.monto,
-						tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-						tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
-						actividad: cuota.Actividad?.dataValues.actividad,
-						categoria: cuota.CategoriaSocio?.dataValues.categoria,
-						fecha_emision:formatDateString(cuota.fecha_emision),
-						fecha_vencimiento: cuota.fecha_vencimiento,
-						forma_de_pago: misCuotasId[i].dataValues.forma_de_pago,
-						fecha_de_pago: formatDateString(misCuotasId[i].dataValues.fecha_pago),					
-					});				
 				}
-	
-				return misCuotasData;
-			}
-			
-			if (socio.dataValues.grupo_familiar_id && socio.dataValues.id === titularFamiliaId) {
-				const familiares = await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(socio.Grupo_familiar.dataValues.id, clubAsociadoId);
-				const familiaresIds = familiares.map(familiar => familiar.dataValues.id);
-	
-				const cuotasFamiliares = await Socio_Cuota.findAll({
-					where:{
-						socio_id: familiaresIds,
-						estado: 'PAGO'
-					},
-					order:[
-						['fecha_pago', 'DESC']
-					]
-				});
-	
-			const cuotasFamiliaresDTO = [];
-	
-			for (const cuotaFamiliar of cuotasFamiliares) {
-					const cuota: any = await Cuota.findOne({
-						include:[
-							{
-								model: TipoSocio,
-								attributes: ['tipo_socio']
-							},{
-								model: Actividad,
-								attributes: ['actividad']
-							},{
-								model: CategoriaSocio,
-								attributes: ['categoria']
-							}
-						],	
-						where: {
-							id: cuotaFamiliar.dataValues.cuota_id
-							}
-						});
-	
-					cuotasFamiliaresDTO.push({
-						monto: cuotaFamiliar.dataValues.monto,
-						tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-						tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
-						actividad: cuota.Actividad?.dataValues.actividad,
-						categoria: cuota.CategoriaSocio?.dataValues.categoria,
-						fecha_emision:formatDateString(cuota.fecha_emision),
-						fecha_vencimiento: cuota.fecha_vencimiento,
-						forma_de_pago: cuotaFamiliar.dataValues.forma_de_pago,
-						fecha_de_pago: formatDateString(cuotaFamiliar.dataValues.fecha_pago),
-						});
-					}
-					
-					return cuotasFamiliaresDTO;
-			}
 
-		}catch(err){
+				return cuotasFamiliaresDTO;
+			}
+	
+		} catch (err) {
 			logger.info(err);
 		}
-	} 
+	}
 
 	async getAllCuotasSocio(socioId: number, clubAsociadoId: number){
 		try{
 			const socio: any = await this.sociosDAO.getSocioById(socioId);
 			const titularFamiliaId = socio.Grupo_familiar?.dataValues.familiar_titular_id;
+			
+			const condicion = !socio.dataValues.grupo_familiar_id || socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId;
 
-			if(socio.dataValues.grupo_familiar_id && socio.dataValues.id !== titularFamiliaId) {
-				return []
-			}
-
-			if (!socio.dataValues.grupo_familiar_id) {
-				const cuotasSocio = await Socio_Cuota.findAll({
+			if (condicion) {
+				const cuotasSocio:any = await Socio_Cuota.findAll({
+					order:[['createdAt', 'DESC']],
+					include: [
+						{
+							model: Cuota,
+							attributes: ['tipo_de_cuota', 'fecha_vencimiento', ],
+							include: [
+							{
+								model: TipoSocio,
+								attributes: ['tipo_socio']
+							}, {
+								model: Actividad,
+								attributes: ['actividad']
+							}, {
+								model: CategoriaSocio,
+								attributes: ['categoria']
+							}, {
+								model: CuotaProgramada,
+								attributes: ['maxima_cantidad_abono_multiple', 'abono_multiple']
+							}
+							]
+						},
+						{
+							model: Inscripcion,
+							attributes: ['tipo_de_cuota'],
+							include: [
+								{
+									model: TipoSocio,
+									attributes: ['tipo_socio']
+								}, {
+									model: Actividad,
+									attributes: ['actividad']
+								}, {
+									model: CategoriaSocio,
+									attributes: ['categoria']
+								}
+							]
+						}
+					],
 					where: {
 						socio_id: socioId
 					}
 				});
-
+				
 				const cuotasSocioDTO = [];
 				for (let i = 0; i < cuotasSocio.length; i++) {
-					const cuota: any = await Cuota.findOne({
-						include: [{
-							model: TipoSocio,
-							attributes: ['tipo_socio']
-						}, {
-							model: Actividad,
-							attributes: ['actividad']
-						}, {
-							model: CategoriaSocio,
-							attributes: ['categoria']
-						}],
-						where: {
-							id: cuotasSocio[i].dataValues.cuota_id
-						}
-					});
-					const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
-					const fechaVto = new Date(año, mes - 1, dia);
-	
-					cuotasSocioDTO.push({
-						id: cuotasSocio[i].dataValues.id, 
-						estado: cuotasSocio[i].dataValues.estado,
-						monto: cuotasSocio[i].dataValues.monto,
-						tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-						tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
-						actividad: cuota.Actividad?.dataValues.actividad,
-						categoria: cuota.CategoriaSocio?.dataValues.categoria,
-						fecha_emision: cuota.dataValues.fecha_emision,
-						fecha_vencimiento: cuota.fecha_vencimiento,
-						forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
-						fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
-						abono_multiple: fechaVto < new Date() ? false : cuota.CuotaProgramada?.dataValues.abono_multiple,
-						max_cant_abono: cuota.CuotaProgramada?.dataValues.maxima_cantidad_abono_multiple,
-						vencida: fechaVto < new Date()
-					});
+					if(cuotasSocio[i].dataValues.cuota_id){
+						const [dia, mes, año] = cuotasSocio[i].Cuotum?.dataValues.fecha_vencimiento.split('-');
+						const fechaVto = new Date(año, mes - 1, dia);
+						
+						cuotasSocioDTO.push({
+							id: cuotasSocio[i].dataValues.id, 
+							estado: cuotasSocio[i].dataValues.estado,
+							monto: cuotasSocio[i].dataValues.monto,
+							tipo_de_cuota: cuotasSocio[i].Cuotum?.dataValues.tipo_de_cuota,
+							tipo_de_socio: cuotasSocio[i].Cuotum?.TipoSocio?.dataValues.tipo_socio,
+							actividad: cuotasSocio[i].Cuotum?.Actividad?.dataValues.actividad,
+							categoria: cuotasSocio[i].Cuotum?.CategoriaSocio?.dataValues.categoria,
+							fecha_emision: cuotasSocio[i].dataValues.periodo,
+							fecha_vencimiento: cuotasSocio[i].Cuotum?.dataValues.fecha_vencimiento,
+							forma_de_pago: cuotasSocio[i].dataValues.forma_de_pago,
+							fecha_de_pago: formatDateString(cuotasSocio[i].dataValues.fecha_pago),
+							abono_multiple: fechaVto < new Date() ? false : cuotasSocio[i].Cuotum?.CuotaProgramada?.dataValues.abono_multiple,
+							max_cant_abono: cuotasSocio[i].Cuotum?.CuotaProgramada?.dataValues.maxima_cantidad_abono_multiple,
+							vencida: fechaVto < new Date()
+						});
+					}else {
+						cuotasSocioDTO.push({
+							id: cuotasSocio[i]?.dataValues.id, 
+							estado: cuotasSocio[i]?.dataValues.estado,
+							monto: cuotasSocio[i]?.dataValues.monto,
+							tipo_de_cuota: cuotasSocio[i].Inscripcion?.dataValues.tipo_de_cuota,
+							tipo_de_socio: cuotasSocio[i].Inscripcion?.TipoSocio?.dataValues.tipo_socio,
+							actividad: cuotasSocio[i].Inscripcion?.Actividad?.dataValues.actividad,
+							categoria: cuotasSocio[i].Inscripcion?.CategoriaSocio?.dataValues.categoria,
+							forma_de_pago: cuotasSocio[i]?.dataValues.forma_de_pago,
+							fecha_de_pago: formatDateString(cuotasSocio[i]?.dataValues.fecha_pago),
+							abono_multiple: false,
+							max_cant_abono: 1,
+							vencida: false
+						});
+					}
 				}
+				console.log(cuotasSocioDTO)
 				return cuotasSocioDTO;
 			}
 	
 			if (socio.dataValues.grupo_familiar_id && socio.dataValues.id === titularFamiliaId) {
 				const familiares = await this.sociosDAO.getAllFamiliaresEnGrupoFamiliar(socio.Grupo_familiar.dataValues.id, clubAsociadoId);
 				const familiaresIds = familiares.map(familiar => familiar.dataValues.id);
-
-				const cuotasFamiliar = await Socio_Cuota.findAll({
+				
+				const cuotasFamiliares:any = await Socio_Cuota.findAll({ 
+					include: [
+						{
+							model: Socio,
+							attributes: ['nombres', 'apellido']
+						},
+						{
+							model: Cuota,
+							attributes: ['tipo_de_cuota', 'fecha_vencimiento', ],
+							include: [
+							{
+								model: TipoSocio,
+								attributes: ['tipo_socio']
+							}, {
+								model: Actividad,
+								attributes: ['actividad']
+							}, {
+								model: CategoriaSocio,
+								attributes: ['categoria']
+							}, {
+								model: CuotaProgramada,
+								attributes: ['maxima_cantidad_abono_multiple', 'abono_multiple']
+							}
+							]
+						},
+						{
+							model: Inscripcion,
+							attributes: ['tipo_de_cuota'],
+							include: [
+								{
+									model: TipoSocio,
+									attributes: ['tipo_socio']
+								}, {
+									model: Actividad,
+									attributes: ['actividad']
+								}, {
+									model: CategoriaSocio,
+									attributes: ['categoria']
+								}
+							]
+						}
+					],
+					order:[['createdAt', 'DESC']],
 					where: {
 						socio_id: familiaresIds
 					}
@@ -589,45 +882,50 @@ export class CuotasDAO{
 	
 				const cuotasFamiliaresDTO = [];
 
-					for (const cuotaFamiliar of  cuotasFamiliar) {
-						const cuota: any = await Cuota.findOne({
-							include: [{
-								model: TipoSocio,
-								attributes: ['tipo_socio']
-							}, {
-								model: Actividad,
-								attributes: ['actividad']
-							}, {
-								model: CategoriaSocio,
-								attributes: ['categoria']
-							}],
-							where: {
-								id: cuotaFamiliar.dataValues.cuota_id
-							}
-						});
-						const [dia, mes, año] = cuota.fecha_vencimiento.split('-');
-						const fechaVto = new Date(año, mes - 1, dia);
-	
-						cuotasFamiliaresDTO.push({
-							id: cuotaFamiliar.dataValues.id, 
-							estado: cuotaFamiliar.dataValues.estado,
-							monto: cuotaFamiliar.dataValues.monto,
-							tipo_de_cuota: cuota.dataValues.tipo_de_cuota,
-							tipo_de_socio: cuota.TipoSocio?.dataValues.tipo_socio,
-							actividad: cuota.Actividad?.dataValues.actividad,
-							categoria: cuota.CategoriaSocio?.dataValues.categoria,
-							fecha_emision: cuota.dataValues.fecha_emision,
-							fecha_vencimiento: cuota.fecha_vencimiento,
-							forma_de_pago: cuotaFamiliar.dataValues.forma_de_pago,
-							fecha_de_pago: formatDateString(cuotaFamiliar.dataValues.fecha_pago),
-							abono_multiple: fechaVto < new Date() ? false : cuota.CuotaProgramada?.dataValues.abono_multiple,
-							max_cant_abono: cuota.CuotaProgramada?.dataValues.maxima_cantidad_abono_multiple,
-							vencida: fechaVto < new Date()
-						});
-				}
-
-				return cuotasFamiliaresDTO;
-			}
+					for (const cuotaFamiliar of  cuotasFamiliares) {
+						const correspondeA = `${cuotaFamiliar.Socio.dataValues.nombres} ${cuotaFamiliar.Socio.dataValues.apellido}`
+						if(cuotaFamiliar.dataValues.cuota_id){
+							const [dia, mes, año] = cuotaFamiliar.Cuotum?.dataValues.fecha_vencimiento.split('-');
+							const fechaVto = new Date(año, mes - 1, dia);
+		
+							cuotasFamiliaresDTO.push({
+								id: cuotaFamiliar?.dataValues.id, 
+								estado: cuotaFamiliar?.dataValues.estado,
+								monto: cuotaFamiliar?.dataValues.monto,
+								tipo_de_cuota: cuotaFamiliar.Cuotum?.dataValues.tipo_de_cuota,
+								tipo_de_socio: cuotaFamiliar.Cuotum?.TipoSocio?.dataValues.tipo_socio,
+								actividad: cuotaFamiliar.Cuotum?.Actividad?.dataValues.actividad,
+								categoria: cuotaFamiliar.Cuotum?.CategoriaSocio?.dataValues.categoria,
+								fecha_emision: cuotaFamiliar.dataValues.periodo,
+								fecha_vencimiento: cuotaFamiliar.Cuotum?.dataValues.fecha_vencimiento,
+								forma_de_pago: cuotaFamiliar?.dataValues.forma_de_pago,
+								fecha_de_pago: formatDateString(cuotaFamiliar?.dataValues.fecha_pago),
+								abono_multiple: fechaVto < new Date() ? false : cuotaFamiliar.Cuotum?.CuotaProgramada?.dataValues.abono_multiple,
+								max_cant_abono: cuotaFamiliar.Cuotum?.CuotaProgramada?.dataValues.maxima_cantidad_abono_multiple,
+								corresponde_a:correspondeA,
+								vencida: fechaVto < new Date()
+							});
+						}else{
+							cuotasFamiliaresDTO.push({
+								id: cuotaFamiliar?.dataValues.id, 
+								estado: cuotaFamiliar?.dataValues.estado,
+								monto: cuotaFamiliar?.dataValues.monto,
+								tipo_de_cuota: cuotaFamiliar.Inscripcion?.dataValues.tipo_de_cuota,
+								tipo_de_socio: cuotaFamiliar.Inscripcion?.TipoSocio?.dataValues.tipo_socio,
+								actividad: cuotaFamiliar.Inscripcion?.Actividad?.dataValues.actividad,
+								categoria: cuotaFamiliar.Inscripcion?.CategoriaSocio?.dataValues.categoria,
+								forma_de_pago: cuotaFamiliar?.dataValues.forma_de_pago,
+								fecha_de_pago: formatDateString(cuotaFamiliar?.dataValues.fecha_pago),
+								abono_multiple: false,
+								max_cant_abono: 1,
+								corresponde_a:correspondeA,
+								vencida: false
+							});
+						}
+					}
+					return cuotasFamiliaresDTO;
+			}	
+			
 		}catch(err){
 			logger.info(err);
 		}
@@ -662,7 +960,7 @@ export class CuotasDAO{
 
 	async getCuotasProgramadas(club){
 		try {
-			const cuotasProgramada = CuotaProgramada.findAll({
+			const cuotasProgramada = await CuotaProgramada.findAll({
 				order:[['created_at', 'DESC']],
 				include: [{
 					model: TipoSocio,
@@ -687,70 +985,95 @@ export class CuotasDAO{
 		}
 	}
 
-	async eliminarCuotaProgramada(club, tipoDeSocioId, actividadId, categoriaId){
+	async eliminarCuotaProgramada(club: number, tipoDeSocioId: number, actividadId: number, categoriaId: number){
 		try {
-			console.log(tipoDeSocioId, actividadId, categoriaId)
-
-			if(tipoDeSocioId){
-				return await CuotaProgramada.destroy({
+			if(tipoDeSocioId && !actividadId){
+				const cuotas = await Cuota.findAll({
+					where:{
+						tipo_socio_id: tipoDeSocioId
+					}
+				})
+				const cuotasId = cuotas.map(cuota => cuota.dataValues.id);
+				await CuotaProgramada.destroy({
 					where:{
 						club_asociado_id: club,
 						tipo_socio_id: tipoDeSocioId
 					}
 				});
-			}else if(categoriaId){
-				return await CuotaProgramada.destroy({
+
+				await Socio_Cuota.destroy({
+					where: {
+						cuota_id:{
+							[Op.in]: cuotasId
+						},
+						estado: 'PENDIENTE'
+					}
+				})
+			}
+			if(!tipoDeSocioId && actividadId && !categoriaId){
+				const cuotas = await Cuota.findAll({
+					where:{
+						actividad_id: actividadId,
+						club_asociado_id: club
+					}
+				});
+				const cuotasId = cuotas.map(cuota => cuota.dataValues.id);
+				await CuotaProgramada.destroy({
+					where:{
+						club_asociado_id: club,
+						actividad_id: actividadId
+					}
+				});
+				await Socio_Cuota.destroy({
+					where: {
+						cuota_id:{
+							[Op.in]: cuotasId
+						},
+						estado: 'PENDIENTE'
+					}
+				})
+			}
+			if(!tipoDeSocioId && actividadId && categoriaId){
+				const cuotas = await Cuota.findAll({
+					where:{
+						actividad_id: actividadId,
+						club_asociado_id: club,
+						categoria_id: categoriaId
+					}
+				});
+				const cuotasId = cuotas.map(cuota => cuota.dataValues.id);
+				await CuotaProgramada.destroy({
 					where:{
 						club_asociado_id: club,
 						categoria_id: categoriaId,
 						actividad_id: actividadId
 					}
 				});
-			}else{
-				return await CuotaProgramada.destroy({
-					where:{
-						club_asociado_id: club,
-						actividad_id: actividadId
+				await Socio_Cuota.destroy({
+					where: {
+						cuota_id:{
+							[Op.in]: cuotasId
+						},
+						estado: 'PENDIENTE'
 					}
-				});
+				})
 			}
 		} catch (err) {
 			logger.info(err);
 		}
 	}
 
-	async actualizarValorDeCuota(club, tipoDeSocioId, actividadId, categoriaId, monto){
+	async actualizarValorDeCuota(club:number, id: number, monto: number, diaDeVencimiento: string){
 		try {
-			if(tipoDeSocioId){
-				return await CuotaProgramada.update({
-					monto
-				}, {
-					where:{
-						club_asociado_id: club,
-						tipo_socio_id: tipoDeSocioId
-					}
-				});
-			}else if(categoriaId){
-				return await CuotaProgramada.update({
-					monto
-				}, {
-					where:{
-						club_asociado_id: club,
-						actividad_id: actividadId,
-						categoria_id: categoriaId
-					}
-				});
-			}else{
-				return await CuotaProgramada.update({
-					monto
-				}, {
-					where:{
-						club_asociado_id: club,
-						actividad_id: actividadId
-					}
-				});
-			}
-			
+			await CuotaProgramada.update({
+				monto,
+				dia_de_vencimiento: diaDeVencimiento
+			}, {
+				where:{
+					club_asociado_id: club,
+					id
+				}
+			});
 		} catch (err) {
 			logger.info(err.message);
 		}

@@ -1,6 +1,8 @@
 import {CuotasDAO} from '../database/cuotas.js';
+import { BadRequestError } from '../errors/bad-request-error.js';
+import { IInfoCuota } from '../interfaces/IInfoCuotas.js';
 import {SociosApi} from '../services/socios.js';
-import {createOrder, findOrder} from '../utils/createOrder.js';
+import {createClient, createOrder, createSubscription, findOrder} from '../utils/createOrder.js';
 import {CuotasApi} from './cuotas.js';
 
 export class PagosApi{
@@ -13,11 +15,42 @@ export class PagosApi{
 		this.cuotasApi = new CuotasApi();
 	}
 
-	async crearOrdenDePago(infoCuotas){
+	async crearOrdenDePago(infoCuotas: IInfoCuota[], socioId: number, clubAsociadoId: number){
+		if(infoCuotas.length > 1 || infoCuotas[0].tipoDeCuota !== 'cuota inscripcion'){
+			const socioCuotas = await this.cuotasApi.getMisCuotasPendientes(socioId, clubAsociadoId);
+			const debeCuotaInscripcion = socioCuotas.find(cuota => cuota.tipo_de_cuota === 'cuota inscripcion');
+			
+			if(debeCuotaInscripcion){
+				const cuotaMensual = infoCuotas.find(infoCuota => infoCuota.tipoDeCuota !== 'cuota inscripcion');
+
+				if(cuotaMensual){
+					throw new BadRequestError('Primero debe abonar todas las cuotas de inscripcion')
+				}
+			}
+
+		}	
 		return await createOrder(infoCuotas);
 	}
 
 	async reciveWebhook(dataId){
 		return await findOrder(dataId);
+	}
+
+	async aprobracionDebitoAutomatico(socioId: number, transactionAmount: number){
+		const socio = await this.sociosApi.getSocioById(socioId);
+		
+		return await createSubscription(socio.dataValues.email, "2024-04-15T13:30:00.000-03:00", transactionAmount)
+	}
+
+	async crearCliente(socioEmail: string){
+		return await createClient(socioEmail);
+	}
+
+	async cancelarDebitoAutomatico(){
+
+	}
+
+	async modificarDebitoAutomatico(){
+
 	}
 }

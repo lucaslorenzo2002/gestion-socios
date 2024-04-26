@@ -16,7 +16,6 @@ export class TipoSocioDAO {
     async getTiposSocio(club) {
         try {
             return await TipoSocio.findAll({
-                attributes: ['tipo_socio', 'id'],
                 where: {
                     club_asociado_id: club
                 }

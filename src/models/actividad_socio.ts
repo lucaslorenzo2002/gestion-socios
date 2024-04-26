@@ -15,6 +15,9 @@ export const Actividad_Socio = sequelize.define('Actividad_Socio', {
 		type: DataTypes.INTEGER,
 		defaultValue: 0
 	},
+	estado_inscripcion_cuota_deportiva:{
+		type: DataTypes.STRING
+	}
 }, { 
 	underscored: true,
 	timestamps: false 

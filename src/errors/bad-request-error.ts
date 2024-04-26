@@ -10,6 +10,7 @@ export class BadRequestError extends CustomError{
     }
     
     serielizeErrors(){ 
+        console.error(this.message)
         return [{message: this.message}]
     }
 }

@@ -15,7 +15,24 @@ export class CategoriasSocioDAO{
 		}
 	}
 
-	async getCategoriasActividad(club, actividadId){
+	async createCategoriaSocioAndActividad(newCategoriaSocio, newActividadSocio, categoriaId: number){
+		try {
+			await Actividad_Socio.create(newActividadSocio);
+
+			const cantidadDeJugadores = await CategoriaSocio_Socio.count({
+				where: {
+					categoria_socio_id: categoriaId
+				}
+			});
+
+			await CategoriaSocio_Socio.create(newCategoriaSocio);
+			await this.actualizarCategoriaCantidadDeJugadores(cantidadDeJugadores+1, categoriaId);
+		} catch (err) {
+			logger.info(err);
+		}
+	}
+
+	async getCategoriasActividad(club: number, actividadId: number){
 		try{
 			return await CategoriaSocio.findAll({
 				where: {
@@ -42,7 +59,7 @@ export class CategoriasSocioDAO{
 		}
 	}
 
-	async getAllSociosEnCategoria(actividadId, categoriaId, clubAsociado){
+	async getAllSociosEnCategoria(actividadId: number, categoriaId: number, clubAsociado: number){
 		try {
 			return await CategoriaSocio_Socio.findAll({
 				attributes: ['socio_id'],
@@ -71,21 +88,29 @@ export class CategoriasSocioDAO{
 		}
 	}
 
-	async eliminarCategoriaSocioSocio(socioId, categoriaId, club){
+	async eliminarCategoriaSocioSocio(socioId: number, categoriaId: number, club: number){
 		try {
-			return await CategoriaSocio_Socio.destroy({
+			const cantidadDeJugadores = await CategoriaSocio_Socio.count({
+				where: {
+					categoria_socio_id: categoriaId
+				}
+			});
+
+			await CategoriaSocio_Socio.destroy({
 				where:{
 					socio_id: socioId,
 					categoria_socio_id: categoriaId,
 					club_asociado_id: club
 				}
-			})
+			});
+
+			await this.actualizarCategoriaCantidadDeJugadores(cantidadDeJugadores-1, categoriaId);
 		} catch (err) {
 			logger.info(err);
 		}
 	}
 
-	async actualizarCategoriaCantidadDeJugadores(cantidadDeJugadores, id){
+	async actualizarCategoriaCantidadDeJugadores(cantidadDeJugadores: number, id: number){
 		try {
 			return await CategoriaSocio.update({
 				cantidad_de_jugadores: cantidadDeJugadores
@@ -137,7 +162,7 @@ export class CategoriasSocioDAO{
 				}
 			})
 
-			return await CategoriaSocio.destroy({
+			await CategoriaSocio.destroy({
 				where:{
 					id,
 					club_asociado_id: club

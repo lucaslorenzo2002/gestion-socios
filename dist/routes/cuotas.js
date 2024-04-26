@@ -9,12 +9,14 @@ export class CuotasRouter {
     start() {
         cuotasRouter.get('/cuota/:cuotaid', adminAuth, this.controller.getSocioCuota);
         cuotasRouter.post('/crearcuota', adminAuth, this.controller.programarCuota);
-        cuotasRouter.get('/totalcuotaspendientes/:socioid', adminAuth, this.controller.totalCuotasPendientes);
+        cuotasRouter.post('/actualizarmontocuotasvencidas', adminAuth, this.controller.actualizarMontoCuotasVencidas);
+        cuotasRouter.get('/totalcuotaspendientes/:socioid', adminAuth, this.controller.totalCuotasPendientesDesdeAdmin);
+        cuotasRouter.get('/totalcuotaspendientes', auth, this.controller.totalCuotasPendientes);
         cuotasRouter.get('/miscuotaspendientes', auth, this.controller.getMisCuotasPendientes);
-        cuotasRouter.get('/miscuotaspagas', auth, this.controller.getMisCuotasPagas);
         cuotasRouter.get('/ultimas3cuotaspagas', auth, this.controller.getLast3CuotasPagas);
         cuotasRouter.get('/ultimas3cuotaspagasdesdeadmin/:socioid', adminAuth, this.controller.getLast3CuotasPagasAdmin);
         cuotasRouter.get('/cuotassocio/:id', adminAuth, this.controller.getCuotasSocio);
+        cuotasRouter.get('/cuotassociosocio', auth, this.controller.getCuotasSocioSocio);
         cuotasRouter.get('/cuotas', adminAuth, this.controller.getAllCuotas);
         cuotasRouter.get('/cuotasprogramadas', adminAuth, this.controller.getCuotasProgramadas);
         cuotasRouter.post('/actualizarvalordecuota', adminAuth, this.controller.actualizarValorDeCuota);
